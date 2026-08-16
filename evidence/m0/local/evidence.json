@@ -7,13 +7,13 @@
     "dependency_lock_hash": "0bceba7a04ce3a9259f98a83fe33e100ef107d9ed5ebb3638901682e0d44c67d",
     "driver_version": "610.74",
     "gpu_name": "NVIDIA GeForce RTX 5080",
-    "helios_git_hash": "5506f0c3659ea07703b1dbde8fc04960ae672bb1",
+    "helios_git_hash": "5394117c35dabb6e176072b55b31cec08d3ce518",
     "helios_version": "0.1.0",
     "os_name": "Windows 10.0 (build 26200)",
     "quality_preset": "balanced",
     "resolution": "1280x720",
     "slang_version": "slangc C:/Users/leonh/Documents/Helios/.deps-cache/slang-windows-x64/bin/slangc.exe:\n2026.14.1",
-    "timestamp_utc": "2026-08-16T14:37:35Z",
+    "timestamp_utc": "2026-08-16T15:06:40Z",
     "validation_layers": "enabled"
   },
   "format": "helios-evidence-report",
@@ -23,7 +23,7 @@
     {
       "detail": "all 921600 pixels match the clear color",
       "metrics": {
-        "elapsed_ms": 24.3836,
+        "elapsed_ms": 24.2178,
         "height": 720,
         "pixels": 921600,
         "width": 1280
@@ -34,7 +34,7 @@
     {
       "detail": "triangle rendered; center=#3f4080",
       "metrics": {
-        "elapsed_ms": 1.4088,
+        "elapsed_ms": 1.7864,
         "height": 720,
         "width": 1280
       },
@@ -47,7 +47,7 @@
         "depth_far": 0.15000000596046448,
         "depth_mid": 0.5,
         "depth_near": 0.8999999761581421,
-        "elapsed_ms": 0.6475,
+        "elapsed_ms": 0.6008,
         "reversed_z_ordered": true
       },
       "name": "depth",
@@ -56,7 +56,7 @@
     {
       "detail": "4096 elements verified bit-exact against CPU reference",
       "metrics": {
-        "elapsed_ms": 0.6281,
+        "elapsed_ms": 0.5472,
         "elements": 4096,
         "mismatches": 0
       },
@@ -66,22 +66,22 @@
     {
       "detail": "buffer copy: 8192 elements, 0 mismatches; image upload: 16384 bytes, match=true",
       "metrics": {
-        "buffer_copy_ms": 0.2664,
+        "buffer_copy_ms": 0.2252,
         "elements": 8192,
         "image_bytes": 16384,
         "image_match": true,
-        "image_upload_ms": 0.6949
+        "image_upload_ms": 0.8764
       },
       "name": "transfer-upload",
       "status": "pass"
     },
     {
-      "detail": "GPU dispatch: 0.0044 ms (timestamp period 1 ns)",
+      "detail": "GPU dispatch: 0.0031 ms (timestamp period 1 ns)",
       "metrics": {
-        "begin_ticks": 1786891055379272896,
-        "elapsed_ms": 0.2214,
-        "end_ticks": 1786891055379277216,
-        "gpu_dispatch_ms": 0.004352,
+        "begin_ticks": 1786892800329657472,
+        "elapsed_ms": 0.2795,
+        "end_ticks": 1786892800329660288,
+        "gpu_dispatch_ms": 0.003072,
         "timestamp_period_ns": 1.0
       },
       "name": "timestamp",
