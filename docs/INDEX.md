@@ -49,7 +49,8 @@ A decision record can constrain architecture, but it does not silently add produ
 
 ### I want to implement it
 
-1. [ARCHITECTURE.md](ARCHITECTURE.md)
+1. [M0_HANDOVER.md](M0_HANDOVER.md) — full M0 engineering record: what was built, why, every bug + root cause, verification matrix, pitfalls, and the M1 start guide
+2. [ARCHITECTURE.md](ARCHITECTURE.md)
 2. [DECISIONS.md](DECISIONS.md)
 3. [VALIDATION.md](VALIDATION.md)
 4. [SUPPORT.md](SUPPORT.md)
