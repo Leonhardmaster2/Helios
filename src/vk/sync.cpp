@@ -6,6 +6,8 @@
 
 #include <volk.h>
 
+using namespace helios::core;
+
 namespace helios::vk {
 
 core::Result<Fence> Fence::create(Device& device, bool signaled, std::string_view debug_name) {
@@ -232,11 +234,8 @@ QueryPool::~QueryPool() {
 }
 
 core::Result<void> QueryPool::reset(std::uint32_t first, std::uint32_t count) const {
-    const VkResult r = vkResetQueryPool(device_->handle(), pool_, first, count);
-    if (r != VK_SUCCESS) {
-        return core::makeError(core::ErrorCode::Vulkan,
-                               "vkResetQueryPool failed: " + std::to_string(static_cast<int>(r)));
-    }
+    // vkResetQueryPool (Vulkan 1.2 host query reset) returns void.
+    vkResetQueryPool(device_->handle(), pool_, first, count);
     return Result<void>{};
 }
 

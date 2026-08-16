@@ -48,7 +48,7 @@ public:
     void setUseColor(bool use) noexcept { use_color_ = use; }
 
 private:
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     LogLevel level_ = LogLevel::Info;
     bool use_color_ = true;
     FILE* file_ = nullptr; // owned
@@ -57,52 +57,52 @@ private:
 // --- free functions --------------------------------------------------------
 
 template <typename... Args>
-void logTrace(std::format_string<Args...> fmt, Args&&... args,
-              std::source_location loc = std::source_location::current()) {
+void logTrace(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Trace) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
-        Log::instance().log(LogLevel::Trace, std::format(fmt, std::forward<Args>(args)...), loc);
+        Log::instance().log(LogLevel::Trace, std::format(fmt, std::forward<Args>(args)...),
+                            std::source_location::current());
     }
 }
 
 template <typename... Args>
-void logDebug(std::format_string<Args...> fmt, Args&&... args,
-              std::source_location loc = std::source_location::current()) {
+void logDebug(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Debug) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
-        Log::instance().log(LogLevel::Debug, std::format(fmt, std::forward<Args>(args)...), loc);
+        Log::instance().log(LogLevel::Debug, std::format(fmt, std::forward<Args>(args)...),
+                            std::source_location::current());
     }
 }
 
 template <typename... Args>
-void logInfo(std::format_string<Args...> fmt, Args&&... args,
-             std::source_location loc = std::source_location::current()) {
+void logInfo(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Info) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
-        Log::instance().log(LogLevel::Info, std::format(fmt, std::forward<Args>(args)...), loc);
+        Log::instance().log(LogLevel::Info, std::format(fmt, std::forward<Args>(args)...),
+                            std::source_location::current());
     }
 }
 
 template <typename... Args>
-void logWarn(std::format_string<Args...> fmt, Args&&... args,
-             std::source_location loc = std::source_location::current()) {
+void logWarn(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Warn) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
-        Log::instance().log(LogLevel::Warn, std::format(fmt, std::forward<Args>(args)...), loc);
+        Log::instance().log(LogLevel::Warn, std::format(fmt, std::forward<Args>(args)...),
+                            std::source_location::current());
     }
 }
 
 template <typename... Args>
-void logError(std::format_string<Args...> fmt, Args&&... args,
-              std::source_location loc = std::source_location::current()) {
+void logError(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Error) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
-        Log::instance().log(LogLevel::Error, std::format(fmt, std::forward<Args>(args)...), loc);
+        Log::instance().log(LogLevel::Error, std::format(fmt, std::forward<Args>(args)...),
+                            std::source_location::current());
     }
 }
 

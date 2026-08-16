@@ -73,4 +73,4 @@ add_library(helios_json INTERFACE)
 target_include_directories(helios_json INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../third_party/nlohmann")
 
 add_library(helios_doctest INTERFACE)
-target_include_directories(helios_doctest INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../third_party/doctest")
+target_include_directories(helios_doctest INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../third_party")

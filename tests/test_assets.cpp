@@ -8,11 +8,14 @@
 #include "helios/assets/schema.hpp"
 #include "helios/core/hash.hpp"
 #include "helios/core/io.hpp"
+#include "helios/core/log.hpp"
 
 #include <filesystem>
 
 namespace fs = std::filesystem;
+namespace core = helios::core;
 using namespace helios::assets;
+using namespace helios::core;
 
 TEST_CASE("manifest round trip") {
     AssetManifest manifest;
@@ -27,7 +30,7 @@ TEST_CASE("manifest round trip") {
     manifest.addEntry(entry);
 
     const nlohmann::json json = manifest.toJson();
-    CHECK(json["format"] == kFormatAssetManifest);
+    CHECK(json["format"].get<std::string>() == std::string(kFormatAssetManifest));
     CHECK(json["schema_version"] == 1);
     CHECK(json["entries"].size() == 1);
 
@@ -35,7 +38,7 @@ TEST_CASE("manifest round trip") {
     REQUIRE(parsed.ok());
     CHECK(parsed.value().entries().size() == 1);
     CHECK(parsed.value().entries()[0].path == "shaders/triangle.spv");
-    CHECK(parsed.value().entries()[0].data_class == DataClass::ModelDerived);
+    CHECK(static_cast<int>(parsed.value().entries()[0].data_class) == static_cast<int>(DataClass::ModelDerived));
     CHECK(parsed.value().find("shaders/triangle.spv").has_value());
     CHECK_FALSE(parsed.value().find("nope").has_value());
 
@@ -54,12 +57,12 @@ TEST_CASE("manifest rejects malformed input") {
     // bad magic
     auto bad_magic = AssetManifest::fromJson(nlohmann::json{{"format", "nope"}, {"schema_version", 1}, {"entries", {}}});
     CHECK(bad_magic.failed());
-    CHECK(bad_magic.error().code() == core::ErrorCode::CorruptData);
+    CHECK(static_cast<int>(bad_magic.error().code()) == static_cast<int>(core::ErrorCode::CorruptData));
     // future schema version
     auto future = AssetManifest::fromJson(
         nlohmann::json{{"format", kFormatAssetManifest}, {"schema_version", 999}, {"entries", {}}});
     CHECK(future.failed());
-    CHECK(future.error().code() == core::ErrorCode::Unsupported);
+    CHECK(static_cast<int>(future.error().code()) == static_cast<int>(core::ErrorCode::Unsupported));
     // missing entries
     auto no_entries =
         AssetManifest::fromJson(nlohmann::json{{"format", kFormatAssetManifest}, {"schema_version", 1}});
@@ -75,9 +78,11 @@ TEST_CASE("manifest rejects malformed input") {
         {"entries", {{"path", "x"}, {"sha256", std::string(64, 'a')}, {"size_bytes", 1}, {"class", "magic"}, {"role", "r"}}}});
     CHECK(bad_class.failed());
     // overflow guard: entries count limit
-    CHECK(AssetManifest::fromJson(
-              nlohmann::json{{"format", kFormatAssetManifest}, {"schema_version", 1}, {"entries", nlohmann::json::array(1'000'001)}})
-              .failed());
+    {
+        nlohmann::json huge = nlohmann::json{{"format", kFormatAssetManifest}, {"schema_version", 1}};
+        huge["entries"] = nlohmann::json::array_t(1'000'001);
+        CHECK(AssetManifest::fromJson(huge).failed());
+    }
 }
 
 TEST_CASE("manifest verifyAgainst hashes") {
@@ -113,7 +118,7 @@ TEST_CASE("data class strings") {
     CHECK(toString(DataClass::Procedural) == "procedural");
     DataClass out{};
     CHECK(fromString("model-derived", out));
-    CHECK(out == DataClass::ModelDerived);
+    CHECK(static_cast<int>(out) == static_cast<int>(DataClass::ModelDerived));
     CHECK_FALSE(fromString("bogus", out));
 }
 
@@ -130,7 +135,7 @@ TEST_CASE("report schemas serialize") {
     cap.environment = env;
     cap.body = nlohmann::json{{"device_name", "test-device"}};
     const nlohmann::json cap_json = capabilityReportToJson(cap);
-    CHECK(cap_json["format"] == kFormatCapabilityReport);
+    CHECK(cap_json["format"].get<std::string>() == std::string(kFormatCapabilityReport));
     CHECK(cap_json["schema_version"] == kSchemaVersionCapabilityReport);
     CHECK(cap_json["device"]["device_name"] == "test-device");
 

@@ -4,9 +4,9 @@
 // CPU-side shader ABI contract. The reflection test
 // (tests/test_shader_abi.cpp) verifies these layouts against the
 // offline-compiled SPIR-V; no undocumented layout assumptions are allowed.
+// This header must stay dependency-free (helios_vk may not depend on
+// helios_math — docs/ARCHITECTURE.md).
 #pragma once
-
-#include "helios/math/mat4.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -15,7 +15,7 @@ namespace helios::shaders {
 
 // triangle.slang: set 0, binding 0 (std140)
 struct TriangleUbo {
-    math::Mat4f mvp;
+    float mvp[16]; // column-major mat4
 };
 static_assert(sizeof(TriangleUbo) == 64, "TriangleUbo must be 64 bytes (std140 mat4)");
 

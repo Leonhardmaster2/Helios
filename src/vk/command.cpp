@@ -6,6 +6,8 @@
 
 #include <volk.h>
 
+using namespace helios::core;
+
 namespace helios::vk {
 
 core::Result<void> runOneShot(Device& device, std::function<void(VkCommandBuffer)> const& record) {

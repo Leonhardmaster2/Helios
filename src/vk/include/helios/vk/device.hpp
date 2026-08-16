@@ -16,6 +16,11 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
+#include <nlohmann/json.hpp>
+
+// Opaque VMA allocator handle (keeps vk_mem_alloc.h private to helios_vk).
+struct VmaAllocator_T;
+using VmaAllocator = VmaAllocator_T*;
 
 namespace helios::vk {
 
@@ -86,7 +91,7 @@ struct DeviceReport {
     // Limits (selected — see capabilities.cpp for the full probe)
     std::uint32_t max_image_dimension_2d = 0;
     std::uint32_t max_bound_descriptor_sets = 0;
-    std::uint32_t max_descriptor_set_bindings = 0;
+    std::uint32_t max_per_stage_resources = 0;
     std::uint32_t max_descriptor_set_uniform_buffers = 0;
     std::uint32_t max_descriptor_set_storage_buffers = 0;
     std::uint32_t max_descriptor_set_sampled_images = 0;

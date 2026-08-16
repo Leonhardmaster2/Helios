@@ -58,7 +58,7 @@ TEST_CASE("reversed-Z infinite perspective properties (D-002)") {
 TEST_CASE("lookAt view matrix") {
     const Mat4f view = lookAt(Vec3f{0, 0, 5}, Vec3f{0, 0, 0}, Vec3f{0, 1, 0});
     const Vec4f origin_in_view = view * Vec4f{0, 0, 0, 1};
-    CHECK(origin_in_view.v[2] == doctest::Approx(5.0f)); // origin is 5 units in front
+    CHECK(origin_in_view.v[2] == doctest::Approx(-5.0f)); // origin is 5 units in front (-Z)
     const Vec4f eye_in_view = view * Vec4f{0, 0, 5, 1};
     CHECK(eye_in_view.v[2] == doctest::Approx(0.0f));
 }

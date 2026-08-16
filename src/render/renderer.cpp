@@ -11,6 +11,7 @@
 #include "helios/render/frame.hpp"
 #include "helios/vk/device.hpp"
 #include "helios/vk/instance.hpp"
+#include "helios/vk/command.hpp"
 #include "helios/vk/smoke/smoke_suite.hpp"
 #include "helios/vk/swapchain.hpp"
 #include "helios/vk/sync.hpp"
@@ -187,48 +188,29 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
 
-        VkDescriptorPoolSize pool_sizes[] = {
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8},
-            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 8},
-            {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 8},
-        };
-        VkDescriptorPoolCreateInfo pool_info{};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 16;
-        pool_info.poolSizeCount = 3;
-        pool_info.pPoolSizes = pool_sizes;
-        if (vkCreateDescriptorPool(impl->device->handle(), &pool_info, nullptr, &impl->imgui_pool) != VK_SUCCESS) {
-            return core::makeError(core::ErrorCode::Vulkan, "ImGui descriptor pool creation failed");
-        }
-
         ImGui_ImplSDL3_InitForVulkan(info.window);
 
         ImGui_ImplVulkan_InitInfo init_info{};
+        init_info.ApiVersion = VK_API_VERSION_1_3;
         init_info.Instance = impl->instance->handle();
         init_info.PhysicalDevice = impl->device->physicalDevice();
         init_info.Device = impl->device->handle();
         init_info.QueueFamily = impl->device->graphicsQueueFamily();
         init_info.Queue = impl->device->graphicsQueue();
-        init_info.DescriptorPool = impl->imgui_pool;
+        init_info.DescriptorPoolSize = 64; // ImGui creates its own pool
         init_info.MinImageCount = 2;
         init_info.ImageCount = static_cast<std::uint32_t>(impl->frames.size());
-        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
         init_info.UseDynamicRendering = true;
-        init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-        init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &impl->swapchain_format;
+        init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.sType =
+            VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &impl->swapchain_format;
         if (!ImGui_ImplVulkan_Init(&init_info)) {
             return core::makeError(core::ErrorCode::Initialization, "ImGui_ImplVulkan_Init failed");
         }
         impl->imgui_initialized = true;
-
-        // Font atlas upload (one-shot submit).
-        auto font_result = vk::runOneShot(*impl->device, [](VkCommandBuffer /*cmd*/) {});
-        if (font_result.failed()) {
-            return font_result.error();
-        }
-        ImGui_ImplVulkan_CreateFontsTexture();
+        // Font atlas texture is created during ImGui_ImplVulkan_Init (new API).
     }
 
     renderer->impl_ = std::move(impl);
@@ -259,10 +241,6 @@ Renderer::~Renderer() {
             ImGui::DestroyContext();
         }
 #endif
-        if (impl_->imgui_pool != VK_NULL_HANDLE) {
-            vkDestroyDescriptorPool(impl_->device->handle(), impl_->imgui_pool, nullptr);
-            impl_->imgui_pool = VK_NULL_HANDLE;
-        }
         if (impl_->surface != VK_NULL_HANDLE) {
             vkDestroySurfaceKHR(impl_->instance->handle(), impl_->surface, nullptr);
             impl_->surface = VK_NULL_HANDLE;

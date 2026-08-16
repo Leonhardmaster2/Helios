@@ -132,7 +132,7 @@ std::string sha256Hex(void const* data, std::size_t size) {
     const auto d = h.finalize();
     static constexpr char kHex[] = "0123456789abcdef";
     std::string out;
-    out.reserve(kDigestSize * 2);
+    out.reserve(Sha256::kDigestSize * 2);
     for (std::uint8_t b : d) {
         out.push_back(kHex[b >> 4U]);
         out.push_back(kHex[b & 0x0fU]);

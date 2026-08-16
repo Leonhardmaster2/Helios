@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 the Helios authors and contributors
+// VMA_IMPLEMENTATION must be defined before any vk_mem_alloc.h include
+// in this TU; the header is not include-guarded.
+#define VMA_IMPLEMENTATION
 #include "helios/vk/vma_allocator.hpp"
 
 #include "helios/core/log.hpp"
 
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
+#include <volk.h>
 
 namespace helios::vk {
 

@@ -51,6 +51,7 @@ public:
 
 private:
     Swapchain() = default;
+    void destroy();
     [[nodiscard]] core::Result<void> createInternal(std::uint32_t width, std::uint32_t height);
 
     Device* device_ = nullptr;

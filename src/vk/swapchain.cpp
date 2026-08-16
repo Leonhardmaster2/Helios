@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <volk.h>
 
+using namespace helios::core;
+
 namespace helios::vk {
 
 namespace {

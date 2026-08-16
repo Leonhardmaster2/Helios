@@ -16,6 +16,10 @@ public:
     ShaderModule() = default;
     [[nodiscard]] static core::Result<ShaderModule> create(Device& device, std::string_view spv_path,
                                                            std::string_view debug_name);
+    // Creates from in-memory SPIR-V (embedded shader data).
+    [[nodiscard]] static core::Result<ShaderModule> createFromSpirv(Device& device,
+                                                                    void const* data, std::size_t size,
+                                                                    std::string_view debug_name);
     ShaderModule(ShaderModule&& other) noexcept;
     ShaderModule& operator=(ShaderModule&& other) noexcept;
     ShaderModule(ShaderModule const&) = delete;

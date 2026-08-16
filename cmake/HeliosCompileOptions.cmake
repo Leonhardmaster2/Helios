@@ -26,6 +26,7 @@ function(helios_configure_target tgt)
 
   if(MSVC)
     target_compile_options(${tgt} PRIVATE /W4 /permissive- /Zc:__cplusplus /utf-8)
+    target_compile_definitions(${tgt} PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
     if(HELIOS_WERROR)
       target_compile_options(${tgt} PRIVATE /WX)
     endif()

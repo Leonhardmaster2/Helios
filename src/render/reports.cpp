@@ -119,8 +119,7 @@ assets::EnvironmentInfo collectEnvironment(std::string_view resolution, bool val
     env.helios_git_hash = std::string(heliosGitHash());
     env.build_type = HELIOS_BUILD_TYPE;
     env.compiler = compilerName();
-    env.cmake_version = std::to_string(CMAKE_VERSION_MAJOR) + "." + std::to_string(CMAKE_VERSION_MINOR) + "." +
-                        std::to_string(CMAKE_VERSION_PATCH);
+    env.cmake_version = HELIOS_CMAKE_VERSION;
     env.slang_version = readSlangVersion(HELIOS_SHADER_DIR);
     env.os_name = osName();
     env.cpu_name = cpuName();
@@ -150,16 +149,16 @@ core::Result<void> writeReports(std::string_view report_dir, assets::Environment
     cap["environment"] = assets::environmentToJson(env);
     cap["device"] = nlohmann::json::parse(device_report_json);
 
-    auto r1 = assets::writeJsonReport(fs::path(std::string(report_dir)) / "capabilities.json", cap);
-    auto r2 = assets::writeJsonReport(fs::path(std::string(report_dir)) / "performance.json",
+    auto r1 = assets::writeJsonReport((fs::path(std::string(report_dir)) / "capabilities.json").string(), cap);
+    auto r2 = assets::writeJsonReport((fs::path(std::string(report_dir)) / "performance.json").string(),
                                       assets::performanceReportToJson(performance));
-    auto r3 = assets::writeJsonReport(fs::path(std::string(report_dir)) / "evidence.json",
+    auto r3 = assets::writeJsonReport((fs::path(std::string(report_dir)) / "evidence.json").string(),
                                       assets::evidenceReportToJson(evidence));
     if (r1.failed()) return r1.error();
     if (r2.failed()) return r2.error();
     if (r3.failed()) return r3.error();
     core::logInfo("Reports written to {}", report_dir);
-    return Result<void>{};
+    return core::Result<void>{};
 }
 
 } // namespace helios::render

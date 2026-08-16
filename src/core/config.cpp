@@ -7,6 +7,51 @@
 #include <fstream>
 #include <sstream>
 
+namespace {
+
+// Sets a dotted key ("window.width") creating nested objects as needed.
+void setNested(nlohmann::json& root, std::string_view key, nlohmann::json value) {
+    nlohmann::json* node = &root;
+    std::size_t start = 0;
+    while (true) {
+        const std::size_t dot = key.find('.', start);
+        const std::string part(key.substr(start, dot == std::string_view::npos ? key.size() - start : dot - start));
+        if (dot == std::string_view::npos) {
+            (*node)[part] = std::move(value);
+            return;
+        }
+        if (!(*node)[part].is_object()) {
+            (*node)[part] = nlohmann::json::object();
+        }
+        node = &(*node)[part];
+        start = dot + 1;
+    }
+}
+
+// Resolves dotted keys ("window.width") through nested objects.
+nlohmann::json const* resolveKey(nlohmann::json const& root, std::string_view key) {
+    nlohmann::json const* node = &root;
+    std::size_t start = 0;
+    while (true) {
+        const std::size_t dot = key.find('.', start);
+        const std::string_view part = key.substr(start, dot == std::string_view::npos ? std::string_view::npos : dot - start);
+        if (!node->is_object()) {
+            return nullptr;
+        }
+        auto it = node->find(std::string(part));
+        if (it == node->end()) {
+            return nullptr;
+        }
+        node = &*it;
+        if (dot == std::string_view::npos) {
+            return node;
+        }
+        start = dot + 1;
+    }
+}
+} // namespace
+
+
 namespace helios::core {
 
 Result<Config> Config::load(std::string_view json_file, std::vector<std::string> const& cli_args) {
@@ -51,9 +96,9 @@ Result<Config> Config::load(std::string_view json_file, std::vector<std::string>
         // Interpret value as JSON when possible, else keep as string.
         auto parsed = nlohmann::json::parse(value, nullptr, false);
         if (!parsed.is_discarded()) {
-            cfg.values_[key] = std::move(parsed);
+            setNested(cfg.values_, key, std::move(parsed));
         } else {
-            cfg.values_[key] = value;
+            setNested(cfg.values_, key, value);
         }
         cfg.cli_keys_.push_back(key);
     }
@@ -62,27 +107,27 @@ Result<Config> Config::load(std::string_view json_file, std::vector<std::string>
 }
 
 Result<std::string> Config::getString(std::string_view key, std::string fallback) const {
-    auto it = values_.find(std::string(key));
-    if (it == values_.end() || it->is_null()) {
+    nlohmann::json const* node = resolveKey(values_, key);
+    if (node == nullptr || node->is_null()) {
         return fallback;
     }
-    if (!it->is_string()) {
+    if (!node->is_string()) {
         return makeError(ErrorCode::InvalidArgument,
                          "config key '" + std::string(key) + "' is not a string");
     }
-    return it->get<std::string>();
+    return node->get<std::string>();
 }
 
 Result<int> Config::getInt(std::string_view key, int fallback) const {
-    auto it = values_.find(std::string(key));
-    if (it == values_.end() || it->is_null()) {
+    nlohmann::json const* node = resolveKey(values_, key);
+    if (node == nullptr || node->is_null()) {
         return fallback;
     }
-    if (!it->is_number_integer()) {
+    if (!node->is_number_integer()) {
         return makeError(ErrorCode::InvalidArgument,
                          "config key '" + std::string(key) + "' is not an integer");
     }
-    return it->get<int>();
+    return node->get<int>();
 }
 
 Result<std::uint32_t> Config::getUInt(std::string_view key, std::uint32_t fallback) const {
@@ -98,32 +143,32 @@ Result<std::uint32_t> Config::getUInt(std::string_view key, std::uint32_t fallba
 }
 
 Result<double> Config::getDouble(std::string_view key, double fallback) const {
-    auto it = values_.find(std::string(key));
-    if (it == values_.end() || it->is_null()) {
+    nlohmann::json const* node = resolveKey(values_, key);
+    if (node == nullptr || node->is_null()) {
         return fallback;
     }
-    if (!it->is_number()) {
+    if (!node->is_number()) {
         return makeError(ErrorCode::InvalidArgument,
                          "config key '" + std::string(key) + "' is not a number");
     }
-    return it->get<double>();
+    return node->get<double>();
 }
 
 Result<bool> Config::getBool(std::string_view key, bool fallback) const {
-    auto it = values_.find(std::string(key));
-    if (it == values_.end() || it->is_null()) {
+    nlohmann::json const* node = resolveKey(values_, key);
+    if (node == nullptr || node->is_null()) {
         return fallback;
     }
-    if (it->is_boolean()) {
-        return it->get<bool>();
+    if (node->is_boolean()) {
+        return node->get<bool>();
     }
-    if (it->is_string()) {
-        const std::string s = it->get<std::string>();
+    if (node->is_string()) {
+        const std::string s = node->get<std::string>();
         if (s == "true" || s == "1") return true;
         if (s == "false" || s == "0") return false;
     }
-    if (it->is_number_integer()) {
-        return it->get<int>() != 0;
+    if (node->is_number_integer()) {
+        return node->get<int>() != 0;
     }
     return makeError(ErrorCode::InvalidArgument,
                      "config key '" + std::string(key) + "' is not a boolean");

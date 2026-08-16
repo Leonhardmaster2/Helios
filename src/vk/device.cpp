@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <volk.h>
+#include <vk_mem_alloc.h>
 
 namespace helios::vk {
 
@@ -148,10 +149,19 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
     f13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     f13.dynamicRendering = VK_TRUE;
     f13.synchronization2 = VK_TRUE;
-    f13.timelineSemaphore = VK_TRUE;
-    f13.bufferDeviceAddress = VK_TRUE;
-    f13.hostQueryReset = VK_TRUE;
     f13.maintenance4 = VK_TRUE;
+
+    VkPhysicalDeviceTimelineSemaphoreFeatures ftimeline{};
+    ftimeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    ftimeline.timelineSemaphore = VK_TRUE;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures faddress{};
+    faddress.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    faddress.bufferDeviceAddress = VK_TRUE;
+
+    VkPhysicalDeviceHostQueryResetFeatures fhqr{};
+    fhqr.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
+    fhqr.hostQueryReset = VK_TRUE;
 
     VkPhysicalDeviceDescriptorIndexingFeatures fdi{};
     fdi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
@@ -166,7 +176,10 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
     VkPhysicalDeviceFeatures2 f2{};
     f2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     f2.pNext = &f13;
-    f13.pNext = &fdi;
+    f13.pNext = &ftimeline;
+    ftimeline.pNext = &faddress;
+    faddress.pNext = &fhqr;
+    fhqr.pNext = &fdi;
     // The descriptor-indexing bits we request may not all be available on
     // older devices; enable them only when advertised (probed earlier).
     {
@@ -199,21 +212,14 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
                                "vkCreateDevice failed: " + std::to_string(static_cast<int>(result)));
     }
     volkLoadDevice(device->device_);
-
     vkGetDeviceQueue(device->device_, queue_family, 0, &device->graphics_queue_);
 
-    // Optional separate compute/transfer queues (same family may be reused;
-    // correctness never depends on them — docs/ARCHITECTURE.md).
-    for (auto const& q : chosen.report.queue_families) {
-        if (q.family_index == queue_family) continue;
-        if (device->compute_queue_ == VK_NULL_HANDLE && q.supports_compute && !q.supports_graphics) {
-            vkGetDeviceQueue(device->device_, q.family_index, 0, &device->compute_queue_);
-        }
-        if (device->transfer_queue_ == VK_NULL_HANDLE && q.supports_transfer && !q.supports_graphics &&
-            !q.supports_compute) {
-            vkGetDeviceQueue(device->device_, q.family_index, 0, &device->transfer_queue_);
-        }
-    }
+    // Serialized baseline (docs/ARCHITECTURE.md): only the enabled graphics
+    // family exists on this device; compute/transfer run on the graphics
+    // queue. Separate families would have to be enabled at device creation
+    // and are an M4-era optimization, not a correctness dependency.
+    device->compute_queue_ = device->graphics_queue_;
+    device->transfer_queue_ = device->graphics_queue_;
 
     // VMA allocator.
     VmaAllocatorCreateInfo vma_info{};

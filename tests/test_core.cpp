@@ -35,22 +35,26 @@ TEST_CASE("result error propagation") {
 
     Result<int> err = makeError(ErrorCode::NotFound, "missing");
     CHECK(err.failed());
-    CHECK(err.error().code() == ErrorCode::NotFound);
+    CHECK(static_cast<int>(err.error().code()) == static_cast<int>(ErrorCode::NotFound));
     CHECK(err.valueOr(7) == 7);
 
     Result<void> void_ok;
     CHECK(void_ok.ok());
     Result<void> void_err = makeError(ErrorCode::Io, "io failed");
     CHECK(void_err.failed());
-    CHECK(void_err.error().code() == ErrorCode::Io);
+    CHECK(static_cast<int>(void_err.error().code()) == static_cast<int>(ErrorCode::Io));
 }
 
 TEST_CASE("sha256 NIST vectors") {
     // FIPS 180-4 test vectors.
     CHECK(sha256Hex("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     CHECK(sha256Hex("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
-    CHECK(sha256Hex("abcdbcdecdefdefgefghfghijhijkijkljklmklmnlmnomnopnopq") ==
-          "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
+    // Two-block message (exactly 56 bytes) — NIST FIPS 180-4 vector.
+    // Built from chunks to avoid transcription errors.
+    const std::string two_block = "abcd" "bcde" "cdef" "defg" "efgh" "fghi" "ghij" "hijk"
+                                  "ijkl" "jklm" "klmn" "lmno" "mnop" "nopq";
+    CHECK(two_block.size() == 56);
+    CHECK(sha256Hex(two_block) == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
     // "a" x 1,000,000
     std::string million_a(1'000'000, 'a');
     CHECK(sha256Hex(million_a) == "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
@@ -84,7 +88,7 @@ TEST_CASE("config layered parsing") {
     // wrong type -> error
     auto bad = cfg.value().getInt("name", 0);
     CHECK(bad.failed());
-    CHECK(bad.error().code() == ErrorCode::InvalidArgument);
+    CHECK(static_cast<int>(bad.error().code()) == static_cast<int>(ErrorCode::InvalidArgument));
 }
 
 TEST_CASE("config from file") {
@@ -114,11 +118,11 @@ TEST_CASE("checked io") {
     // size limit enforcement
     auto limited = readTextFile(tmp.string(), 4);
     CHECK(limited.failed());
-    CHECK(limited.error().code() == ErrorCode::OutOfRange);
+    CHECK(static_cast<int>(limited.error().code()) == static_cast<int>(ErrorCode::OutOfRange));
     fs::remove(tmp);
     auto missing = readTextFile(tmp.string());
     CHECK(missing.failed());
-    CHECK(missing.error().code() == ErrorCode::Io);
+    CHECK(static_cast<int>(missing.error().code()) == static_cast<int>(ErrorCode::Io));
 }
 
 TEST_CASE("debug names") {

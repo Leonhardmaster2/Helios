@@ -5,28 +5,30 @@
 # per-file SHA-256, matching the Helios asset-manifest contract
 # (docs/DATA_AND_PROVENANCE.md, schemas/asset-manifest.schema.json).
 
-file(SHA256 "${HELIOS_SLANGC_EXECUTABLE}" slangc_hash)
+file(GLOB HELIOS_SPV_FILES "${HELIOS_SHADER_DIR}/*.spv")
+list(SORT HELIOS_SPV_FILES)
 
-set(entries "[]")
+set(entries)
+set(first TRUE)
 foreach(spv IN LISTS HELIOS_SPV_FILES)
   get_filename_component(fname "${spv}" NAME)
   file(SHA256 "${spv}" fhash)
   file(SIZE "${spv}" fsize)
-  string(JSON entry OBJECT
-    "path" "${fname}"
-    "sha256" "${fhash}"
-    "size_bytes" "${fsize}"
-    "class" "model-derived"
-    "role" "compiled-shader")
-  string(JSON entries SET "${entries}" -1 "${entry}")
+  if(NOT first)
+    string(APPEND entries ",")
+  endif()
+  set(first FALSE)
+  string(APPEND entries "    {\"path\":\"${fname}\",\"sha256\":\"${fhash}\",\"size_bytes\":${fsize},\"class\":\"model-derived\",\"role\":\"compiled-shader\"}")
 endforeach()
 
-string(JSON manifest OBJECT
-  "schema_version" 1
-  "format" "helios-asset-manifest"
-  "generator" "cmake/gen_shader_manifest.cmake + slangc (pinned v2026.14.1)"
-  "slangc_sha256" "${slangc_hash}"
-  "entries" "${entries}")
-
-file(WRITE "${HELIOS_MANIFEST_OUT}" "${manifest}\n")
-message(STATUS "shader manifest: ${HELIOS_MANIFEST_OUT}")
+set(manifest "{
+  \"format\": \"helios-asset-manifest\",
+  \"schema_version\": 1,
+  \"generator\": \"cmake/gen_shader_manifest.cmake + slangc (pinned v2026.14.1, see shaders/slangc-version.txt)\",
+  \"entries\": [
+${entries}
+  ]
+}
+")
+file(WRITE "${HELIOS_MANIFEST_OUT}" "${manifest}")
+message(STATUS "shader manifest written: ${HELIOS_MANIFEST_OUT} (${HELIOS_SPV_FILES} files)")

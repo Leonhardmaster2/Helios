@@ -3,7 +3,10 @@
 #include "helios/vk/image.hpp"
 
 #include "helios/vk/buffer.hpp"
+#include "helios/vk/vma_allocator.hpp"
 #include "helios/vk/command.hpp"
+
+#include <volk.h>
 
 #include <cstring>
 

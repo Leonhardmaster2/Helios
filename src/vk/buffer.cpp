@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 the Helios authors and contributors
 #include "helios/vk/buffer.hpp"
+#include "helios/vk/vma_allocator.hpp"
 
 #include "helios/core/debug_name.hpp"
 
+#include <volk.h>
+
 #include <cstring>
+
+using namespace helios::core;
 
 namespace helios::vk {
 

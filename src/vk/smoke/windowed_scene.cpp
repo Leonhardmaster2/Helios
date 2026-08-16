@@ -6,12 +6,12 @@
 #include "helios/vk/smoke/smoke_suite.hpp"
 
 #include "helios/core/log.hpp"
-#include "helios/math/mat4.hpp"
 #include "helios/vk/buffer.hpp"
 #include "helios/vk/descriptor_set.hpp"
 #include "helios/vk/pipeline.hpp"
 #include "helios/vk/shader_module.hpp"
 #include "shaders/abi.hpp"
+#include "shaders_embedded.hpp"
 
 #include <array>
 #include <filesystem>
@@ -47,15 +47,22 @@ core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Dev
     auto impl = std::make_unique<Impl>();
     scene->device_ = &device;
 
-    const fs::path shader_dir = fs::path(HELIOS_SHADER_DIR);
+    auto loadEmbedded = [&](std::string_view name, std::string_view dbg) -> core::Result<ShaderModule> {
+        for (std::size_t i = 0; i < helios::shaders::embedded::kShaderCount; ++i) {
+            auto const& s = helios::shaders::embedded::kShaders[i];
+            if (std::string_view(s.name) == name) {
+                return ShaderModule::createFromSpirv(device, s.data, s.size, dbg);
+            }
+        }
+        return core::makeError(core::ErrorCode::NotFound, "embedded shader not found: " + std::string(name));
+    };
 
-    auto tri_vs = ShaderModule::create(device, (shader_dir / "triangle.spv").string(), "win-triangle-vs");
-    auto tri_fs = ShaderModule::create(device, (shader_dir / "triangle.spv").string(), "win-triangle-fs");
-    auto dep_vs = ShaderModule::create(device, (shader_dir / "depth.spv").string(), "win-depth-vs");
-    auto dep_fs = ShaderModule::create(device, (shader_dir / "depth.spv").string(), "win-depth-fs");
+    auto tri_vs = loadEmbedded("triangle.slang.vertex.spv", "win-triangle-vs");
+    auto tri_fs = loadEmbedded("triangle.slang.fragment.spv", "win-triangle-fs");
+    auto dep_vs = loadEmbedded("depth.slang.vertex.spv", "win-depth-vs");
+    auto dep_fs = loadEmbedded("depth.slang.fragment.spv", "win-depth-fs");
     if (tri_vs.failed() || tri_fs.failed() || dep_vs.failed() || dep_fs.failed()) {
-        return core::makeError(core::ErrorCode::NotFound,
-                               "shader files missing (run the build; shaders/*.spv)");
+        return core::makeError(core::ErrorCode::NotFound, "embedded shader data missing");
     }
     impl->triangle_vs = std::move(tri_vs.value());
     impl->triangle_fs = std::move(tri_fs.value());
@@ -126,8 +133,11 @@ core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Dev
     impl->triangle_ubo = std::move(tri_ubo.value());
     impl->depth_ubo = std::move(dep_ubo.value());
 
-    shaders::TriangleUbo tri_data;
-    tri_data.mvp = math::Mat4f::identity();
+    shaders::TriangleUbo tri_data{};
+    tri_data.mvp[0] = 1.0f;
+    tri_data.mvp[5] = 1.0f;
+    tri_data.mvp[10] = 1.0f;
+    tri_data.mvp[15] = 1.0f;
     impl->triangle_ubo.upload(&tri_data, sizeof(tri_data));
 
     shaders::DepthParams dep_data{};

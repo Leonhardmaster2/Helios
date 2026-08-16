@@ -60,10 +60,20 @@ private:
     HeadlessSmoke() = default;
     void destroy();
 
+    struct Shared;
+    std::unique_ptr<Shared> shared_;
+
     Device* device_ = nullptr;
     SmokeOptions options_;
     std::unique_ptr<SmokeContext> context_;
     std::vector<SmokePathResult> results_;
+
+    SmokePathResult runClear();
+    SmokePathResult runTriangle();
+    SmokePathResult runDepth();
+    SmokePathResult runCompute();
+    SmokePathResult runTransfer();
+    SmokePathResult runTimestamp();
 };
 
 // Records the shared windowed smoke scene (clear + triangle + depth probes)

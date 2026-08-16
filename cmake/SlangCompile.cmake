@@ -15,29 +15,26 @@ if(NOT HELIOS_SLANGC_EXECUTABLE)
     "Pinned toolchain: shader-slang/slang v2026.14.1.")
 endif()
 
-set(HELIOS_SLANG_PROFILE "cs_6_6" CACHE STRING "Slang target profile for SPIR-V output")
-
 function(helios_compile_shaders)
-  set(shader_srcs
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.slang"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/depth.slang"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/compute.slang")
+  set(shader_srcs    triangle.slang triangle.slang depth.slang depth.slang compute.slang)
+  set(shader_entries vsMain         fsMain         vsMain      fsMain      csMain)
+  set(shader_stages  vertex         fragment       vertex      fragment    compute)
   set(shader_out_dir "${CMAKE_CURRENT_BINARY_DIR}/shaders")
   file(MAKE_DIRECTORY "${shader_out_dir}")
 
   set(outputs)
-  foreach(src IN LISTS shader_srcs)
-    get_filename_component(base "${src}" NAME_WE)
-    set(out "${shader_out_dir}/${base}.spv")
+  foreach(src_name entry stage IN ZIP_LISTS shader_srcs shader_entries shader_stages)
+    set(src "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${src_name}")
+    set(out "${shader_out_dir}/${src_name}.${stage}.spv")
     list(APPEND outputs "${out}")
     add_custom_command(
       OUTPUT "${out}"
       COMMAND "${HELIOS_SLANGC_EXECUTABLE}" "${src}"
-              -target spirv -profile "${HELIOS_SLANG_PROFILE}"
+              -target spirv -entry "${entry}" -stage "${stage}"
               -O3 -g0
               -o "${out}"
       DEPENDS "${src}"
-      COMMENT "slangc: ${base}.slang -> ${base}.spv"
+      COMMENT "slangc: ${src_name} (${stage} ${entry})"
       VERBATIM)
   endforeach()
 
@@ -50,21 +47,41 @@ function(helios_compile_shaders)
     VERBATIM)
   list(APPEND outputs "${version_stamp}")
 
-  # Asset manifest with per-file SHA-256 (written by cmake -P script).
+  # Asset manifest with per-file SHA-256. A configure-time script with
+  # baked-in paths is used (no -D args: the VS generator mangles them).
   set(manifest "${shader_out_dir}/shaders.manifest.json")
   list(APPEND outputs "${manifest}")
+  set(manifest_script "${shader_out_dir}/gen_shader_manifest_impl.cmake")
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_shader_manifest_impl.in"
+    "${manifest_script}" @ONLY)
+  set(manifest_deps "${shader_out_dir}/triangle.slang.vertex.spv;${shader_out_dir}/triangle.slang.fragment.spv;${shader_out_dir}/depth.slang.vertex.spv;${shader_out_dir}/depth.slang.fragment.spv;${shader_out_dir}/compute.slang.compute.spv;${version_stamp}")
   add_custom_command(
     OUTPUT "${manifest}"
-    COMMAND "${CMAKE_COMMAND}"
-      -DHELIOS_MANIFEST_OUT="${manifest}"
-      -DHELIOS_SHADER_DIR="${shader_out_dir}"
-      -DHELIOS_SPV_FILES="${outputs}"
-      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_shader_manifest.cmake"
-    DEPENDS ${outputs}
+    COMMAND "${CMAKE_COMMAND}" -P "${manifest_script}"
+    DEPENDS ${manifest_deps}
     COMMENT "Writing shader asset manifest"
     VERBATIM)
 
   add_custom_target(helios_shaders DEPENDS ${outputs})
-  # Consumers declare add_dependencies(<tgt> helios_shaders) and locate the
-  # .spv files via the HELIOS_SHADER_DIR compile definition.
+
+  # --- embedded shader data (self-contained binaries) -----------------------
+  set(embed_hpp "${shader_out_dir}/shaders_embedded.hpp")
+  set(embed_cpp "${shader_out_dir}/shaders_embedded.cpp")
+  set(embed_script "${shader_out_dir}/gen_shader_embed_impl.cmake")
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_shader_embed_impl.in"
+    "${embed_script}" @ONLY)
+  add_custom_command(
+    OUTPUT "${embed_hpp}" "${embed_cpp}"
+    COMMAND "${CMAKE_COMMAND}" -P "${embed_script}"
+    DEPENDS ${manifest_deps} "${manifest}"
+    COMMENT "Embedding compiled shaders"
+    VERBATIM)
+
+  add_library(helios_shader_data STATIC "${embed_cpp}")
+  target_include_directories(helios_shader_data PUBLIC "${shader_out_dir}")
+  set_target_properties(helios_shader_data PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  add_dependencies(helios_shader_data helios_shaders)
+  helios_configure_target(helios_shader_data)
 endfunction()

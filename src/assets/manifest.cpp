@@ -68,7 +68,7 @@ core::Result<AssetManifest> AssetManifest::fromJson(nlohmann::json const& json) 
         return core::makeError(core::ErrorCode::CorruptData, "asset manifest: bad or missing format magic");
     }
     auto ver = json.find("schema_version");
-    if (ver == json.end() || !ver->is_number_unsigned()) {
+    if (ver == json.end() || !(ver->is_number_integer() || ver->is_number_unsigned())) {
         return core::makeError(core::ErrorCode::CorruptData, "asset manifest: missing schema_version");
     }
     const std::uint32_t version = ver->get<std::uint32_t>();

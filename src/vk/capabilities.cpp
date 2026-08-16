@@ -14,24 +14,31 @@ namespace helios::vk {
 
 namespace {
 
-VkPhysicalDeviceVulkan13Features query13(VkPhysicalDevice physical) {
-    VkPhysicalDeviceVulkan13Features f{};
-    f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-    VkPhysicalDeviceFeatures2 f2{};
-    f2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    f2.pNext = &f;
-    vkGetPhysicalDeviceFeatures2(physical, &f2);
-    return f;
-}
+// Queries the promoted feature structs Helios relies on (D-004).
+struct QueriedFeatures {
+    VkPhysicalDeviceVulkan13Features f13;
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline;
+    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_address;
+    VkPhysicalDeviceHostQueryResetFeatures host_query_reset;
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing;
+};
 
-VkPhysicalDeviceDescriptorIndexingFeatures queryDescriptorIndexing(VkPhysicalDevice physical) {
-    VkPhysicalDeviceDescriptorIndexingFeatures f{};
-    f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+QueriedFeatures queryFeatures(VkPhysicalDevice physical) {
+    QueriedFeatures q{};
+    q.f13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    q.timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    q.buffer_address.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    q.host_query_reset.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
+    q.descriptor_indexing.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    q.f13.pNext = &q.timeline;
+    q.timeline.pNext = &q.buffer_address;
+    q.buffer_address.pNext = &q.host_query_reset;
+    q.host_query_reset.pNext = &q.descriptor_indexing;
     VkPhysicalDeviceFeatures2 f2{};
     f2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    f2.pNext = &f;
+    f2.pNext = &q.f13;
     vkGetPhysicalDeviceFeatures2(physical, &f2);
-    return f;
+    return q;
 }
 
 } // namespace
@@ -82,7 +89,7 @@ nlohmann::json deviceReportToJson(DeviceReport const& r) {
     j["limits"] = nlohmann::json{
         {"max_image_dimension_2d", r.max_image_dimension_2d},
         {"max_bound_descriptor_sets", r.max_bound_descriptor_sets},
-        {"max_descriptor_set_bindings", r.max_descriptor_set_bindings},
+        {"max_per_stage_resources", r.max_per_stage_resources},
         {"max_descriptor_set_uniform_buffers", r.max_descriptor_set_uniform_buffers},
         {"max_descriptor_set_storage_buffers", r.max_descriptor_set_storage_buffers},
         {"max_descriptor_set_sampled_images", r.max_descriptor_set_sampled_images},
@@ -143,18 +150,18 @@ void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR 
     }
 
     // Features.
-    const auto f13 = query13(physical);
-    const auto fdi = queryDescriptorIndexing(physical);
+    const auto f = queryFeatures(physical);
     VkPhysicalDeviceFeatures base{};
     vkGetPhysicalDeviceFeatures(physical, &base);
-    r.dynamic_rendering = f13.dynamicRendering == VK_TRUE;
-    r.synchronization2 = f13.synchronization2 == VK_TRUE;
-    r.timeline_semaphore = f13.timelineSemaphore == VK_TRUE;
-    r.buffer_device_address = f13.bufferDeviceAddress == VK_TRUE;
-    r.descriptor_indexing = fdi.descriptorIndexing == VK_TRUE;
-    r.host_query_reset = f13.hostQueryReset == VK_TRUE;
+    r.dynamic_rendering = f.f13.dynamicRendering == VK_TRUE;
+    r.synchronization2 = f.f13.synchronization2 == VK_TRUE;
+    r.timeline_semaphore = f.timeline.timelineSemaphore == VK_TRUE;
+    r.buffer_device_address = f.buffer_address.bufferDeviceAddress == VK_TRUE;
+    r.descriptor_indexing = f.descriptor_indexing.runtimeDescriptorArray == VK_TRUE &&
+                            f.descriptor_indexing.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+    r.host_query_reset = f.host_query_reset.hostQueryReset == VK_TRUE;
     r.shader_float64 = base.shaderFloat64 == VK_TRUE;
-    r.maintenance4 = f13.maintenance4 == VK_TRUE;
+    r.maintenance4 = f.f13.maintenance4 == VK_TRUE;
 
     const bool required_ok =
         r.dynamic_rendering && r.synchronization2 && r.timeline_semaphore && r.buffer_device_address &&
@@ -233,12 +240,12 @@ void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR 
     auto const& L = props.limits;
     r.max_image_dimension_2d = L.maxImageDimension2D;
     r.max_bound_descriptor_sets = L.maxBoundDescriptorSets;
-    r.max_descriptor_set_bindings = L.maxDescriptorSetBindings;
     r.max_descriptor_set_uniform_buffers = L.maxDescriptorSetUniformBuffers;
     r.max_descriptor_set_storage_buffers = L.maxDescriptorSetStorageBuffers;
     r.max_descriptor_set_sampled_images = L.maxDescriptorSetSampledImages;
     r.max_descriptor_set_samplers = L.maxDescriptorSetSamplers;
     r.max_memory_allocation_count = L.maxMemoryAllocationCount;
+    r.max_per_stage_resources = L.maxPerStageResources;
     r.max_push_constants_size = L.maxPushConstantsSize;
     r.max_vertex_input_bindings = L.maxVertexInputBindings;
     r.max_vertex_input_attributes = L.maxVertexInputAttributes;
@@ -254,14 +261,23 @@ void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR 
     r.max_compute_shared_memory_size = L.maxComputeSharedMemorySize;
     r.max_compute_work_group_invocations = L.maxComputeWorkGroupInvocations;
 
-    // Memory heaps.
+    // Memory heaps (host visibility is a memory-TYPE property, not a
+    // heap flag — Vulkan has no VK_MEMORY_HEAP_HOST_VISIBLE_BIT).
     VkPhysicalDeviceMemoryProperties mem{};
     vkGetPhysicalDeviceMemoryProperties(physical, &mem);
     for (std::uint32_t i = 0; i < mem.memoryHeapCount; ++i) {
         if (mem.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
             r.device_local_heap_bytes += mem.memoryHeaps[i].size;
         }
-        if (mem.memoryHeaps[i].flags & VK_MEMORY_HEAP_HOST_VISIBLE_BIT) {
+        bool host_visible = false;
+        for (std::uint32_t t = 0; t < mem.memoryTypeCount; ++t) {
+            if (mem.memoryTypes[t].heapIndex == i &&
+                (mem.memoryTypes[t].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
+                host_visible = true;
+                break;
+            }
+        }
+        if (host_visible) {
             r.host_visible_heap_bytes += mem.memoryHeaps[i].size;
         }
     }

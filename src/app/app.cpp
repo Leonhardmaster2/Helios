@@ -68,13 +68,14 @@ int runWindowed(CliOptions const& options) {
     renderer_info.enable_imgui = true;
     renderer_info.max_frames = options.frames;
 
-    auto renderer = render::Renderer::create(renderer_info);
-    if (renderer.failed()) {
-        core::logError("renderer creation failed: {}", renderer.error().to_string());
+    auto renderer_result = render::Renderer::create(renderer_info);
+    if (renderer_result.failed()) {
+        core::logError("renderer creation failed: {}", renderer_result.error().to_string());
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 2;
     }
+    auto renderer = std::move(renderer_result.value());
 
     OrbitCamera camera;
     bool running = true;

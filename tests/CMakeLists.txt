@@ -6,19 +6,11 @@
 function(helios_add_test name)
   cmake_parse_arguments(ARG "" "" "LIBS" ${ARGN})
   add_executable(${name} ${ARG_UNPARSED_ARGUMENTS})
+  target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
   target_link_libraries(${name} PRIVATE helios_doctest ${ARG_LIBS})
   helios_configure_target(${name})
   add_test(NAME ${name} COMMAND ${name} --no-skip --exit)
 endfunction()
-
-# Enforce MSVC static runtime for consistency across targets.
-if(MSVC)
-  foreach(tgt IN ITEMS helios_core helios_math helios_assets helios_universe helios_planet helios_vk helios_render helios)
-    if(TARGET ${tgt})
-      set_property(TARGET ${tgt} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    endif()
-  endforeach()
-endif()
 
 helios_add_test(helios_core_tests test_core.cpp LIBS helios_core)
 helios_add_test(helios_math_tests test_math.cpp LIBS helios_math)
@@ -26,7 +18,7 @@ helios_add_test(helios_assets_tests test_assets.cpp LIBS helios_assets)
 helios_add_test(helios_universe_tests test_universe.cpp LIBS helios_universe)
 helios_add_test(helios_planet_tests test_planet.cpp LIBS helios_planet)
 helios_add_test(helios_vk_tests test_vk_core.cpp LIBS helios_vk)
-helios_add_test(helios_shader_tests test_shader_abi.cpp LIBS helios_assets helios_math spirv-reflect-static)
+helios_add_test(helios_shader_tests test_shader_abi.cpp LIBS helios_assets helios_math spirv-reflect-static helios_shader_data)
 add_dependencies(helios_shader_tests helios_shaders)
 
 # Optional GPU smoke executable: runs the headless smoke suite via the app

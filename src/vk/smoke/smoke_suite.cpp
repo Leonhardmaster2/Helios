@@ -11,13 +11,14 @@
 
 #include "helios/core/log.hpp"
 #include "helios/core/timer.hpp"
-#include "helios/math/mat4.hpp"
 #include "helios/vk/buffer.hpp"
+#include "helios/vk/command.hpp"
 #include "helios/vk/descriptor_set.hpp"
 #include "helios/vk/pipeline.hpp"
 #include "helios/vk/shader_module.hpp"
 #include "helios/vk/sync.hpp"
 #include "shaders/abi.hpp"
+#include "shaders_embedded.hpp"
 
 #include <algorithm>
 #include <array>
@@ -51,7 +52,15 @@ std::string shaderDir() {
 }
 
 core::Result<ShaderModule> loadShader(Device& device, std::string_view name) {
-    return ShaderModule::create(device, fs::path(shaderDir()) / std::string(name) + ".spv", name);
+    for (std::size_t i = 0; i < helios::shaders::embedded::kShaderCount; ++i) {
+        auto const& s = helios::shaders::embedded::kShaders[i];
+        if (std::string_view(s.name).size() == std::string_view(name).size() + 4 &&
+            std::string_view(s.name).substr(0, std::string_view(name).size()) == name) {
+            return ShaderModule::createFromSpirv(device, s.data, s.size, name);
+        }
+    }
+    return core::makeError(core::ErrorCode::NotFound,
+                           "embedded shader not found: " + std::string(name));
 }
 
 // Records an image transition to/from a renderable layout.
@@ -129,6 +138,7 @@ struct HeadlessSmoke::Shared {
     // depth path
     ShaderModule depth_vs;
     ShaderModule depth_fs;
+    PipelineLayout depth_layout;
     Pipeline depth_pipeline;
     // compute path
     ShaderModule compute_cs;
@@ -164,10 +174,10 @@ core::Result<std::unique_ptr<HeadlessSmoke>> HeadlessSmoke::create(Instance& /*i
     auto shared = std::make_unique<Shared>();
 
     // --- triangle path ---
-    auto tri_vs = loadShader(device, "triangle");
+    auto tri_vs = loadShader(device, "triangle.slang.vertex");
     if (tri_vs.failed()) return tri_vs.error();
     shared->triangle_vs = std::move(tri_vs.value());
-    auto tri_fs = loadShader(device, "triangle");
+    auto tri_fs = loadShader(device, "triangle.slang.fragment");
     if (tri_fs.failed()) return tri_fs.error();
     shared->triangle_fs = std::move(tri_fs.value());
 
@@ -195,16 +205,17 @@ core::Result<std::unique_ptr<HeadlessSmoke>> HeadlessSmoke::create(Instance& /*i
     shared->triangle_pipeline = std::move(tri_pipeline.value());
 
     // --- depth path ---
-    auto depth_vs = loadShader(device, "depth");
+    auto depth_vs = loadShader(device, "depth.slang.vertex");
     if (depth_vs.failed()) return depth_vs.error();
     shared->depth_vs = std::move(depth_vs.value());
-    auto depth_fs = loadShader(device, "depth");
+    auto depth_fs = loadShader(device, "depth.slang.fragment");
     if (depth_fs.failed()) return depth_fs.error();
     shared->depth_fs = std::move(depth_fs.value());
 
     auto depth_layout =
         PipelineLayout::create(device, {shared->ubo_layout.handle()}, {}, "smoke-depth-layout");
     if (depth_layout.failed()) return depth_layout.error();
+    shared->depth_layout = std::move(depth_layout.value());
 
     GraphicsPipelineDescription depth_desc;
     depth_desc.vertex = shared->depth_vs.handle();
@@ -222,7 +233,7 @@ core::Result<std::unique_ptr<HeadlessSmoke>> HeadlessSmoke::create(Instance& /*i
     shared->depth_pipeline = std::move(depth_pipeline.value());
 
     // --- compute path ---
-    auto compute_cs = loadShader(device, "compute");
+    auto compute_cs = loadShader(device, "compute.slang.compute");
     if (compute_cs.failed()) return compute_cs.error();
     shared->compute_cs = std::move(compute_cs.value());
 
@@ -340,8 +351,12 @@ SmokePathResult HeadlessSmoke::runTriangle() {
         return result;
     }
 
-    shaders::TriangleUbo data;
-    data.mvp = math::Mat4f::identity(); // NDC-space triangle; depth disabled
+    shaders::TriangleUbo data{};
+    // Identity matrix (NDC-space triangle; depth disabled).
+    data.mvp[0] = 1.0f;
+    data.mvp[5] = 1.0f;
+    data.mvp[10] = 1.0f;
+    data.mvp[15] = 1.0f;
 
     VkDescriptorBufferInfo buffer_info{ubo.value().handle(), 0, sizeof(shaders::TriangleUbo)};
     VkWriteDescriptorSet write{};
@@ -493,7 +508,7 @@ SmokePathResult HeadlessSmoke::runDepth() {
                         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                         VK_IMAGE_ASPECT_DEPTH_BIT);
         // Draw far -> mid -> near with GREATER test: near wins where overlapping.
-        recordDepthProbes(*device_, cmd, shared_->depth_pipeline.handle(), shared_->ubo_layout.handle(),
+        recordDepthProbes(*device_, cmd, shared_->depth_pipeline.handle(), shared_->depth_layout.handle(),
                           set.value(), extent);
         transitionImage(cmd, context_->colorImage().handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,

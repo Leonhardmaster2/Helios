@@ -5,6 +5,8 @@
 // manifests and cache keys. Validated against NIST test vectors.
 #pragma once
 
+#include "helios/core/error.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>

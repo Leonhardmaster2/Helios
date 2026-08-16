@@ -5,11 +5,11 @@
 // out[i] = (i * 0x9E3779B1u + seed) ^ (i >> 1)  — CPU-verifiable exactly.
 [[vk::binding(0, 0)]] RWStructuredBuffer<uint> out_buf;
 
-[[vk::push_constant]]
 struct ComputeParams {
     uint count;
     uint seed;
-} params;
+};
+[[vk::push_constant]] ComputeParams params;
 
 [shader("compute")]
 [numthreads(64, 1, 1)]

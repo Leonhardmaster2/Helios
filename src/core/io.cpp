@@ -43,16 +43,15 @@ Result<std::string> readTextFile(std::string_view path, std::uint64_t max_size) 
 }
 
 Result<void> writeFileAtomic(std::string_view path, void const* data, std::size_t size) {
-    const fs::path target(std::string(path));
+    const fs::path target = fs::path(std::string(path));
     const fs::path dir = target.parent_path().empty() ? fs::path(".") : target.parent_path();
     std::error_code ec;
     if (!fs::exists(dir, ec)) {
         return makeError(ErrorCode::Io, "directory does not exist: " + dir.string());
     }
     static std::atomic<std::uint64_t> counter{0};
-    const fs::path tmp = dir / (target.filename().string() + ".tmp" +
-                                std::to_string(counter.fetch_add(1)) + "." + std::to_string(std::hash<std::string>{}(std::string(path))));
-    std::uint64_t
+    const std::uint64_t seq = counter.fetch_add(1);
+    const fs::path tmp = dir / (target.filename().string() + ".tmp" + std::to_string(seq));
     {
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
         if (!out) {

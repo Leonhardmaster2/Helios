@@ -1,0 +1,33 @@
+# Generated at configure time from cmake/gen_shader_manifest_impl.in.
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 the Helios authors and contributors
+set(HELIOS_MANIFEST_OUT "@manifest@")
+set(HELIOS_SHADER_DIR "@shader_out_dir@")
+
+file(GLOB HELIOS_SPV_FILES "${HELIOS_SHADER_DIR}/*.spv")
+list(SORT HELIOS_SPV_FILES)
+
+set(entries)
+set(first TRUE)
+foreach(spv IN LISTS HELIOS_SPV_FILES)
+  get_filename_component(fname "${spv}" NAME)
+  file(SHA256 "${spv}" fhash)
+  file(SIZE "${spv}" fsize)
+  if(NOT first)
+    string(APPEND entries ",")
+  endif()
+  set(first FALSE)
+  string(APPEND entries "    {\"path\":\"${fname}\",\"sha256\":\"${fhash}\",\"size_bytes\":${fsize},\"class\":\"model-derived\",\"role\":\"compiled-shader\"}")
+endforeach()
+
+set(manifest "{
+  \"format\": \"helios-asset-manifest\",
+  \"schema_version\": 1,
+  \"generator\": \"cmake/gen_shader_manifest.cmake + slangc (pinned v2026.14.1, see shaders/slangc-version.txt)\",
+  \"entries\": [
+${entries}
+  ]
+}
+")
+file(WRITE "${HELIOS_MANIFEST_OUT}" "${manifest}")
+message(STATUS "shader manifest written: ${HELIOS_MANIFEST_OUT} (${HELIOS_SPV_FILES} files)")

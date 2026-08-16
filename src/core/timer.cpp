@@ -33,8 +33,8 @@ double FrameStats::percentile(double pct) const {
     }
     std::vector<double> sorted(samples_.begin(), samples_.begin() + static_cast<std::ptrdiff_t>(count_));
     std::sort(sorted.begin(), sorted.end());
-    const std::size_t idx = static_cast<std::size_t>(
-        std::clamp(pct / 100.0, 0.0, 1.0) * static_cast<double>(count_ - 1) + 0.5);
+    const double rank = std::clamp(pct / 100.0, 0.0, 1.0) * static_cast<double>(count_ - 1);
+    const std::size_t idx = static_cast<std::size_t>(rank);
     return sorted[idx];
 }
 

@@ -77,6 +77,7 @@ public:
 
 private:
     Renderer() = default;
+    void drawDebugUi();
     struct Impl;
     std::unique_ptr<Impl> impl_;
     RendererStats stats_;
