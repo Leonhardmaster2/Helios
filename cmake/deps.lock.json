@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "documentation": "Helios M0 pinned dependency revisions. URLs are immutable per ref; sha256 values are verified by scripts/fetch_deps.mjs. Regenerate hashes with: node scripts/fetch_deps.mjs --update-lock",
+  "entries": {
+    "SDL": {
+      "kind": "archive",
+      "url": "https://github.com/libsdl-org/SDL/archive/refs/tags/release-3.4.14.tar.gz",
+      "sha256": "9d57b178fb297e121ef2605275937b7afaa7cd24d99ce1f95953e69e7a2535d6",
+      "cache_dir": ".deps-cache/SDL"
+    },
+    "VulkanHeaders": {
+      "kind": "archive",
+      "url": "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/vulkan-sdk-1.4.357.0.tar.gz",
+      "sha256": "e87dce08116151f6b6d7de6b6faf41498e87e6cf848ff16fa3bd5402190ad4a3",
+      "cache_dir": ".deps-cache/VulkanHeaders"
+    },
+    "Tracy": {
+      "kind": "archive",
+      "url": "https://github.com/wolfpld/tracy/archive/refs/tags/v0.14.0.tar.gz",
+      "sha256": "a932cf2a90adbf63f87b449fa4374a52f18a36c4a3858d4d69d3e75d62fa5f6a",
+      "cache_dir": ".deps-cache/Tracy"
+    },
+    "ImGui": {
+      "kind": "archive",
+      "url": "https://github.com/ocornut/imgui/archive/46d39d56febc2a00bdd2270dc88c8a13f2a0441a.tar.gz",
+      "sha256": "2dcf01525add00deea85de961b76c9255060bd0a338b7bb02af2655425b827d3",
+      "cache_dir": ".deps-cache/ImGui"
+    },
+    "SpirvReflect": {
+      "kind": "archive",
+      "url": "https://github.com/KhronosGroup/SPIRV-Reflect/archive/refs/tags/vulkan-sdk-1.4.357.0.tar.gz",
+      "sha256": "c865bd55459c5b8020a6ac962e462fc33eb4bf2dae8bf7c474357c58ce22a95d",
+      "cache_dir": ".deps-cache/SpirvReflect"
+    },
+    "slang_windows_x64": {
+      "kind": "zip",
+      "url": "https://github.com/shader-slang/slang/releases/download/v2026.14.1/slang-2026.14.1-windows-x86_64.zip",
+      "sha256": "5ed0a59d650a0af0aca45d5db4e083b3d8fb5cea05748747dd95dfbe9c580658",
+      "cache_dir": ".deps-cache/slang-windows-x64"
+    },
+    "slang_linux_x64": {
+      "kind": "zip",
+      "url": "https://github.com/shader-slang/slang/releases/download/v2026.14.1/slang-2026.14.1-linux-x86_64.zip",
+      "sha256": "d7c02e044b5f2f4ceb8e220a2cf8f7d053418db1877da2656fb59e1ce545f8dd",
+      "cache_dir": ".deps-cache/slang-linux-x64"
+    },
+    "slang_macos_arm64": {
+      "kind": "zip",
+      "url": "https://github.com/shader-slang/slang/releases/download/v2026.14.1/slang-2026.14.1-macos-aarch64.zip",
+      "sha256": "2976c3a9a6f4d77b5734d00b5d841d1ff087d9965d9006b9b4d73edd0062cb7d",
+      "cache_dir": ".deps-cache/slang-macos-arm64"
+    },
+    "slang_macos_x64": {
+      "kind": "zip",
+      "url": "https://github.com/shader-slang/slang/releases/download/v2026.14.1/slang-2026.14.1-macos-x86_64.zip",
+      "sha256": "a3da109bfb732ab3f09beb6999f9831d9be440fa9a1843006b7ea56498f545d6",
+      "cache_dir": ".deps-cache/slang-macos-x64"
+    },
+    "volk": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/zeux/volk/2e19a77ce9b5bd8df0106f66b91032c0e5c776a1/volk.h",
+      "sha256": "9fe91885cba72c48a29c5b5d5256ce660112236e307582ef192d051e367d3de6",
+      "dest": "third_party/volk/volk.h"
+    },
+    "volk_c": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/zeux/volk/2e19a77ce9b5bd8df0106f66b91032c0e5c776a1/volk.c",
+      "sha256": "64159146b843e1b3d9f5dc14035b2716e16868b9e5ec4d7aef8f57f6b674a875",
+      "dest": "third_party/volk/volk.c"
+    },
+    "volk_license": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/zeux/volk/2e19a77ce9b5bd8df0106f66b91032c0e5c776a1/LICENSE.md",
+      "sha256": "04a0693a84f19e53d281ca98bbb0c86ca77251ab13769c6168e6684feb9a1436",
+      "dest": "third_party/volk/LICENSE.md"
+    },
+    "vma_header": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/v3.4.0/include/vk_mem_alloc.h",
+      "sha256": "8487b7995ad3b263eb73bc5b9a77d71aa69b6bef5d58a715c02d2663afd81f1a",
+      "dest": "third_party/VMA/vk_mem_alloc.h"
+    },
+    "vma_license": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/v3.4.0/LICENSE.txt",
+      "sha256": "52df2c03d6cfc9ffec13c9d3626c530fc9ce0cbe41d5ea3d10cd46edeb1aeb38",
+      "dest": "third_party/VMA/LICENSE.txt"
+    },
+    "doctest_header": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/doctest/doctest/v2.5.3/doctest/doctest.h",
+      "sha256": "cfd518a3ef90f67e1f3ba514df23fb3627437de1a2feeba78cf5062a40021421",
+      "dest": "third_party/doctest/doctest.h"
+    },
+    "doctest_license": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/doctest/doctest/v2.5.3/LICENSE.txt",
+      "sha256": "0fe0b331fa1513dcce8604ff1fa925f32d1cea17d8aeb1c2471fad40d291adc5",
+      "dest": "third_party/doctest/LICENSE.txt"
+    },
+    "json_header": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/nlohmann/json/v3.12.0/single_include/nlohmann/json.hpp",
+      "sha256": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63",
+      "dest": "third_party/nlohmann/json.hpp"
+    },
+    "json_license": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/nlohmann/json/v3.12.0/LICENSE.MIT",
+      "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+      "dest": "third_party/nlohmann/LICENSE.MIT"
+    }
+  }
+}

@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (c) 2026 the Helios authors and contributors
+#
+# Helios M0 CI:
+#   - cpu-suite:  reference/experimental platform builds + unit/shader tests
+#   - sanitizers: GCC/Clang ASan+UBSan (Linux)
+#   - format:     clang-format + module dependency audit
+#   - gpu-smoke:  manual/scheduled headless smoke on a self-hosted GPU runner
+#
+# NOTE: hosted runners have no GPU. The gpu-smoke job is the only Vulkan
+# execution path and requires a self-hosted runner labelled "gpu".
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DEPS_CACHE_KEY: v1-${{ hashFiles('cmake/deps.lock.json') }}
+
+jobs:
+  format-and-deps:
+    name: Format + module deps
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit module dependency graph
+        run: node scripts/check_module_deps.mjs
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-18
+      - name: Check formatting (diff check)
+        run: |
+          find src -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | xargs clang-format-18 -style=file --dry-run --Werror
+
+  cpu-suite:
+    name: CPU suite (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-gcc
+            os: ubuntu-24.04
+            preset: ci
+            install: sudo apt-get update && sudo apt-get install -y ninja-build
+          - name: ubuntu-clang
+            os: ubuntu-24.04
+            preset: ci
+            cc: clang
+            cxx: clang++
+            install: sudo apt-get update && sudo apt-get install -y ninja-build clang
+          - name: windows-msvc
+            os: windows-2025
+            preset: ci
+            shell: pwsh
+          - name: macos-clang
+            os: macos-15
+            preset: ci
+            install: brew install ninja
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell || 'bash' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install system deps
+        if: matrix.install != ''
+        run: ${{ matrix.install }}
+      - name: Restore dependency cache
+        uses: actions/cache@v4
+        with:
+          path: .deps-cache
+          key: ${{ env.DEPS_CACHE_KEY }}-${{ matrix.name }}
+      - name: Fetch pinned dependencies
+        run: node scripts/fetch_deps.mjs --update-lock --write-cmake
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake --preset ${{ matrix.preset }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
+      - name: Run CPU tests (unit + shader ABI)
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure -E helios_headless_smoke
+
+  sanitizers:
+    name: Sanitizers (ASan+UBSan, ubuntu-gcc)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Restore dependency cache
+        uses: actions/cache@v4
+        with:
+          path: .deps-cache
+          key: ${{ env.DEPS_CACHE_KEY }}-sanitize
+      - name: Fetch pinned dependencies
+        run: node scripts/fetch_deps.mjs --update-lock --write-cmake
+      - name: Configure
+        run: cmake --preset asan
+      - name: Build
+        run: cmake --build --preset asan --parallel
+      - name: Run tests under sanitizers
+        run: ctest --preset ci -E helios_headless_smoke --output-on-failure
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1
+
+  gpu-smoke:
+    name: Headless GPU smoke (self-hosted)
+    runs-on: [self-hosted, gpu]
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fetch pinned dependencies
+        run: node scripts/fetch_deps.mjs --update-lock --write-cmake
+      - name: Configure
+        run: cmake --preset ci
+      - name: Build
+        run: cmake --build --preset ci --parallel
+      - name: Headless smoke (validation on)
+        run: ./build/ci/src/app/helios --headless-smoke --iterations 3 --report-dir evidence/m0/ci
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-smoke-evidence
+          path: evidence/m0/ci
+      - name: Fail on validation errors
+        run: |
+          node -e "const e=require('./evidence/m0/ci/evidence.json'); if(e.validation_error_count>0){console.error('validation errors: '+e.validation_error_count);process.exit(1)}"

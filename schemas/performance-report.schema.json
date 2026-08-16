@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Proceduralabs/Helios/schemas/performance-report.schema.json",
+  "title": "Helios performance report",
+  "description": "Versioned frame-time performance report. Schema version 1 (M0).",
+  "type": "object",
+  "required": ["format", "schema_version", "environment", "cpu_frame_ms", "gpu_frame_ms", "extras"],
+  "properties": {
+    "format": { "const": "helios-performance-report" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "environment": { "type": "object" },
+    "cpu_frame_ms": { "$ref": "#/definitions/percentiles" },
+    "gpu_frame_ms": { "$ref": "#/definitions/percentiles" },
+    "extras": { "type": "object" }
+  },
+  "definitions": {
+    "percentiles": {
+      "type": "object",
+      "required": ["frame_count", "p50_ms", "p95_ms", "p99_ms", "max_ms", "min_ms", "average_ms"],
+      "properties": {
+        "frame_count": { "type": "integer", "minimum": 0 },
+        "p50_ms": { "type": "number", "minimum": 0 },
+        "p95_ms": { "type": "number", "minimum": 0 },
+        "p99_ms": { "type": "number", "minimum": 0 },
+        "max_ms": { "type": "number", "minimum": 0 },
+        "min_ms": { "type": "number", "minimum": 0 },
+        "average_ms": { "type": "number", "minimum": 0 }
+      }
+    }
+  },
+  "additionalProperties": false
+}

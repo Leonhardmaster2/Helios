@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Helios formatting (clang-format >= 16)
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 110
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+BreakBeforeBraces: Attach
+NamespaceIndentation: None
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+DerivePointerAlignment: false
+PointerAlignment: Left

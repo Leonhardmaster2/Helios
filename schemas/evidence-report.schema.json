@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Proceduralabs/Helios/schemas/evidence-report.schema.json",
+  "title": "Helios evidence report",
+  "description": "Versioned milestone evidence report summarizing smoke paths and validation state. Schema version 1 (M0).",
+  "type": "object",
+  "required": ["format", "schema_version", "environment", "smoke_paths", "validation_error_count", "validation_warning_count", "notes"],
+  "properties": {
+    "format": { "const": "helios-evidence-report" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "environment": { "type": "object" },
+    "smoke_paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "detail", "metrics"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "enum": ["pass", "fail", "skipped"] },
+          "detail": { "type": "string" },
+          "metrics": { "type": "object" }
+        }
+      }
+    },
+    "validation_error_count": { "type": "integer", "minimum": 0 },
+    "validation_warning_count": { "type": "integer", "minimum": 0 },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

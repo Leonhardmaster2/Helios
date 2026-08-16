@@ -1,0 +1,213 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "Developer (RelWithDebInfo)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "ON",
+        "HELIOS_ENABLE_TRACY": "ON",
+        "HELIOS_ENABLE_IMGUI": "ON",
+        "HELIOS_WERROR": "OFF"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "ON",
+        "HELIOS_ENABLE_TRACY": "OFF"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "OFF"
+      }
+    },
+    {
+      "name": "ci",
+      "displayName": "CI (warnings-as-errors)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "ON",
+        "HELIOS_WERROR": "ON"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "ASan+UBSan (GCC/Clang)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/asan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_ASAN": "ON",
+        "HELIOS_ENABLE_UBSAN": "ON",
+        "HELIOS_ENABLE_VALIDATION": "OFF"
+      }
+    },
+    {
+      "name": "msvc-asan",
+      "displayName": "ASan (MSVC)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/msvc-asan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_ASAN": "ON",
+        "HELIOS_ENABLE_VALIDATION": "OFF"
+      }
+    },
+    {
+      "name": "headless-ci",
+      "displayName": "Headless smoke CI",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/headless-ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "ON",
+        "HELIOS_ENABLE_IMGUI": "OFF"
+      }
+    },
+    {
+      "name": "windows-dev",
+      "displayName": "Windows dev (VS generator)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-dev",
+      "cacheVariables": {
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "ON",
+        "HELIOS_ENABLE_TRACY": "ON",
+        "HELIOS_ENABLE_IMGUI": "ON",
+        "HELIOS_WERROR": "OFF"
+      }
+    },
+    {
+      "name": "windows-ci",
+      "displayName": "Windows CI (VS generator, Werror)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-ci",
+      "cacheVariables": {
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "ON",
+        "HELIOS_ENABLE_TRACY": "ON",
+        "HELIOS_ENABLE_IMGUI": "ON",
+        "HELIOS_WERROR": "ON"
+      }
+    },
+    {
+      "name": "windows-asan",
+      "displayName": "Windows ASan (VS generator)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-asan",
+      "cacheVariables": {
+        "HELIOS_BUILD_TESTS": "ON",
+        "HELIOS_ENABLE_VALIDATION": "OFF",
+        "HELIOS_ENABLE_ASAN": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "ci",
+      "configurePreset": "ci"
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "msvc-asan",
+      "configurePreset": "msvc-asan"
+    },
+    {
+      "name": "headless-ci",
+      "configurePreset": "headless-ci"
+    },
+    {
+      "name": "windows-dev",
+      "configurePreset": "windows-dev",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "windows-ci",
+      "configurePreset": "windows-ci",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-asan",
+      "configurePreset": "windows-asan",
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci",
+      "configurePreset": "ci",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-dev",
+      "configurePreset": "windows-dev",
+      "configuration": "RelWithDebInfo",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-ci",
+      "configurePreset": "windows-ci",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

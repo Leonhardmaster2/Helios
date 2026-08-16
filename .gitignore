@@ -1,29 +1,25 @@
-# Build
+# Build outputs
 build/
 out/
 cmake-build-*/
-CMakeCache.txt
-CMakeFiles/
+*.user
+*.suo
 
-# IDE
+# Local dependency cache (populated by scripts/fetch_deps.mjs)
+.deps-cache/
+
+# Local tools (ninja, llvm, ...) fetched by the bootstrap
+.tools/
+
+# Generated dependency-cache wiring
+cmake/deps-cache.cmake
+
+# Editor/IDE
 .vscode/
 .idea/
 .vs/
 *.swp
 
-# Compiled shaders / generated
-*.spv
-shaders/generated/
-
-# Baked data (large; distributed separately)
-!assets/banner.png
-*.r16
-*.ktx2
-
-# Profiling / captures
-*.tracy
-*.rdc
-
-# OS noise
-.DS_Store
+# OS
 Thumbs.db
+.DS_Store

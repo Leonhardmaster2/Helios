@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Helios static analysis (clang-tidy >= 16)
+Checks: >-
+  clang-diagnostic-*,
+  bugprone-*,
+  performance-*,
+  modernize-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-else-after-return,
+  -readability-redundant-access-specifiers,
+  -performance-enum-size,
+  -modernize-pass-by-value,
+  -modernize-avoid-c-arrays,
+  -modernize-use-nodiscard
+WarningsAsErrors: ''
+HeaderFilterRegex: 'helios/.*'
+FormatStyle: file
+CheckOptions:
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '2'
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable

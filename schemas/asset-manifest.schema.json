@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Proceduralabs/Helios/schemas/asset-manifest.schema.json",
+  "title": "Helios asset manifest",
+  "description": "Versioned manifest of Helios assets with SHA-256, size and provenance class. Schema version 1 (M0).",
+  "type": "object",
+  "required": ["format", "schema_version", "entries"],
+  "properties": {
+    "format": { "const": "helios-asset-manifest" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "scope_note": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "size_bytes", "class", "role"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "size_bytes": { "type": "integer", "minimum": 0 },
+          "class": { "enum": ["measured", "model-derived", "procedural", "display"] },
+          "role": { "type": "string" },
+          "generator": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

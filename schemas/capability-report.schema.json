@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Proceduralabs/Helios/schemas/capability-report.schema.json",
+  "title": "Helios Vulkan capability report",
+  "description": "Versioned device capability report. Schema version 1 (M0).",
+  "type": "object",
+  "required": ["format", "schema_version", "environment", "device"],
+  "properties": {
+    "format": { "const": "helios-capability-report" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "environment": { "type": "object" },
+    "device": { "type": "object" }
+  },
+  "additionalProperties": false
+}
