@@ -11,6 +11,13 @@ cmake-build-*/
 # Local tools (ninja, llvm, ...) fetched by the bootstrap
 .tools/
 
+# Ad-hoc run logs
+*_run*.txt
+perf_run*.txt
+smoke_*.txt
+configure.log
+build.log
+
 # Generated dependency-cache wiring
 cmake/deps-cache.cmake
 

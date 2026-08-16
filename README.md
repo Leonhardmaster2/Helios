@@ -4,7 +4,7 @@
 
 # Helios
 
-> **Status — design only, 12 July 2026.** This repository contains a project charter and a preliminary architecture. It has no C++ source tree, build system, tests, executable, benchmark results, or downloadable release yet. Every technical claim below is a target until a milestone produces evidence for it.
+> **Status — Milestone 0 implementation landed, 16 August 2026.** The repository now contains a C++20/CMake source tree with unit tests, a pinned offline Slang→SPIR-V pipeline with reflection/ABI tests, a Vulkan capability report, swapchain-free and windowed smoke paths that run with **zero Vulkan validation errors** on the reference profile, and the first performance evidence. See [ROADMAP.md](ROADMAP.md), [evidence/m0/README.md](evidence/m0/README.md) and the BUILDING section below. Every technical claim in this document beyond M0 evidence remains a target.
 
 Helios is a planned open-source, real-time **Solar-System visualization engine and reference explorer**. Its first public release aims to move a free-flight camera from an interplanetary view to roughly two metres above one detailed planetary surface without a scene-loading transition.
 
@@ -99,7 +99,7 @@ There is deliberately no `src/`, `CMakeLists.txt`, or build command yet.
 
 There is nothing to build yet. [Milestone 0](ROADMAP.md) creates the first reproducible application skeleton, capability report, test target, CI job, and swapchain-free smoke path.
 
-Documentation issues and corrections are welcome. Code contributions are not being accepted until the skeleton, CI, reviewed contributor agreement, real legal identity/contact details, and signing workflow exist. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Documentation issues and corrections are welcome. Code contributions are not being accepted until the reviewed contributor agreement, real legal identity/contact details, and signing workflow exist. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licensing status
 

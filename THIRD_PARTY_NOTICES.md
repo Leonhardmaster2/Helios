@@ -1,20 +1,22 @@
-# Third-party software notices
+# Third-party notices
 
-No third-party code is vendored or linked yet. Names in architecture/decision documents are candidates, not evidence that a dependency is present or approved.
+Status: **recorded for M0-adopted dependencies**. Full license texts ship with
+each dependency source (vendored copies under `third_party/`, fetched copies
+in the dependency cache). Pins and SHA-256: `cmake/deps.lock.json`.
 
-When Milestone 0 adds a dependency, this file records at least:
+| Component | Version / pin | License | Usage |
+|---|---|---|---|
+| SDL3 | release-3.4.14 | zlib | window/input/surface (external adapter for helios_vk) |
+| Vulkan-Headers | vulkan-sdk-1.4.357.0 | Apache-2.0 | Vulkan API headers |
+| volk | 2e19a77 (2026-08-14) | MIT | Vulkan loader function pointers |
+| VulkanMemoryAllocator (VMA) | v3.2.1 | MIT | GPU memory allocation |
+| Dear ImGui | 46d39d5 (2026-08-07) | MIT | debug UI (backend: SDL3 + Vulkan) |
+| Tracy | v0.14.0 | BSD-3-Clause | profiler client (optional, HELIOS_ENABLE_TRACY) |
+| doctest | v2.5.3 | MIT | unit test framework |
+| nlohmann/json | v3.12.0 | MIT | JSON (config, reports, manifests) |
+| SPIRV-Reflect | vulkan-sdk-1.4.357.0 | Apache-2.0 | shader reflection/ABI tests |
+| Slang | v2026.14.1 | MIT | offline shader compiler (slangc → SPIR-V) |
+| Mesa (lavapipe) | 26.2.0 | MIT | **experimental diagnostic only** (software Vulkan ICD, not shipped) |
 
-| Field | Required value |
-|---|---|
-| Name | Upstream project/library name |
-| Version | Exact tag plus commit/hash where applicable |
-| Source | Authoritative upstream URL |
-| SPDX/license | Exact license identifier/text |
-| Helios use | Linked, compiled tool, vendored source, runtime component, etc. |
-| Modifications | Patch list or “none” |
-| Required notice | Verbatim attribution/notice where required |
-| Review | Date and reviewer/check result |
-
-Dependency fetches use immutable revisions. Transitive dependencies and compiler/runtime redistribution requirements are included rather than hidden behind the top-level library name.
-
-Datasets and catalogs are not software notices. Gaia DR3, DEMs, atmosphere parameters, and generated/baked assets use per-release manifests under [docs/DATA_AND_PROVENANCE.md](docs/DATA_AND_PROVENANCE.md), and their required notices are packaged alongside this file in a release.
+Generated build artifacts (SPIR-V, manifests, embedded shader data) carry
+their own generator/version stamps. No runtime data assets are shipped in M0.

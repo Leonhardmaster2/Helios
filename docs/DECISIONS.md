@@ -64,6 +64,8 @@ Reference: Strugar, *Continuous Distance-Dependent Level of Detail for Rendering
 
 **Consequence:** “2019 or newer” is removed as a support claim. M0 may reduce a requirement if a bounded fallback preserves the product and materially improves hardware coverage.
 
+**M0 evidence (2026-08-16):** every proposed hard requirement was probed and enabled on the reference device (dynamic rendering, synchronization2, timeline semaphores, buffer device address, host query reset, shader draw parameters, D32_SFLOAT, timestamp queries — see evidence/m0/local/capabilities.json); the smoke suite runs with zero validation errors. Descriptor-indexing bits are reported but M0 shaders do not yet require them (declared minimum recorded in evidence).
+
 **Revisit if:** capability spikes exclude intended reference devices or the renderer does not actually need a proposed hard requirement.
 
 ## D-005 — Slang shaders compiled offline to SPIR-V
@@ -77,6 +79,8 @@ Reference: Strugar, *Continuous Distance-Dependent Level of Detail for Rendering
 **Consequence:** Helios owns another toolchain dependency. macOS adds SPIR-V→MSL translation through MoltenVK, so M0 must exercise actual shaders, not just compile a trivial file.
 
 **Fallback:** documented GLSL/glslang path only if Slang blocks supported platforms or reproducible builds; a theoretical fallback is not maintained in parallel for free.
+
+**M0 evidence (2026-08-16):** slangc v2026.14.1 compiles all M0 shaders offline to SPIR-V; the reflection/ABI tests verify entry points, descriptor bindings, block offsets and push-constant layout against the CPU ABI header; shader bytes are embedded at build time (self-contained binaries) and their manifest hashes are verified. MoltenVK SPIR-V→MSL behavior remains unvalidated (blocked: no macOS environment).
 
 **Revisit if:** pinned releases cannot produce stable ABI/reflection behavior or MoltenVK translation prevents required shaders.
 
@@ -205,6 +209,8 @@ References: [Vulkan invariance](https://docs.vulkan.org/spec/latest/appendices/i
 
 **Consequence:** macOS/MoltenVK receives an explicit portability spike. A successful compile or triangle does not imply v1 support.
 
+**M0 evidence (2026-08-16):** the reference profile is Windows 11 + MSVC 2022 on an NVIDIA RTX 5080 (D-017). Linux and macOS CI build jobs are configured; macOS/MoltenVK stays experimental until the shader translation and device suite run there.
+
 **Revisit if:** automation/hardware/contributor capacity makes another profile cheap to validate continuously.
 
 ## D-015 — Tools and runtime share versioned asset schemas
@@ -234,3 +240,92 @@ References: [Vulkan invariance](https://docs.vulkan.org/spec/latest/appendices/i
 **Consequence:** celestial impacts do not imply camera/surface collision, walking, general rigid-body gameplay, or water. Even tier 2 needs a terrain event/revision layer, cache-key changes, save/replay provenance, and invalidation/regeneration of affected children, parents, normals, bounds, and geometric-error metadata; it is not a render-pass toggle. The highest-fidelity tier is a separate multi-year research program.
 
 **Revisit if:** M10 has shipped and a concrete fidelity/use-case proposal includes data, compute, validation, and product scope.
+
+## D-017 — M0 reference platform: Windows 11 + MSVC 2022 (NVIDIA RTX 5080)
+
+**Status:** Accepted for M0 · **Date:** 2026-08-16 · **Validate:** M10
+
+**Decision:** the M0 reference OS/toolchain is Windows 11 (build 26200) with
+MSVC 19.44.35228 (VS 2022 17.15, C++20), CMake 4.2.0-rc2, Ninja/MSBuild, the
+Vulkan SDK 1.4.328.1, and an NVIDIA GeForce RTX 5080 (driver 610.74, Vulkan
+1.4.341) as the reference device. The full M0 suite — unit tests, shader ABI
+tests, headless smoke with validation layers, and the windowed SDL3/swapchain
+path — was executed on this profile with zero Vulkan validation errors
+(evidence: `evidence/m0/local`, `evidence/m0/perf`).
+
+**Why:** the M0 evidence bundle requires an environment where the complete
+suite actually runs. This machine is that environment; the capability probe
+reports every required feature and limit.
+
+**Important limit:** the reference profile is a *development* profile. The v1
+minimum GPU profile (candidate: any Vulkan 1.3 discrete GPU with the required
+features and ≥6 GiB VRAM, per [SUPPORT.md](SUPPORT.md)) still needs the device
+matrix; macOS/MoltenVK remains experimental until the Slang→SPIR-V→MSL
+translation tests run on macOS hardware (blocked in the M0 environment).
+
+**Revisit if:** a hardware/CI resource appears that can validate a second
+profile continuously.
+
+## D-018 — M0 determinism tier policy for runtime products
+
+**Status:** Accepted · **Date:** 2026-08-16 · **Validate:** M3
+
+**Decision:** M0 formalizes the three determinism tiers from
+[ARCHITECTURE.md](ARCHITECTURE.md) as schema-tagged categories in every
+cache/asset key:
+
+1. **exact-canonical** — specified integer/fixed-point products, bitwise hashes
+   across declared profiles (M3 height generation at shared seams);
+2. **backend-repeatable** — bitwise output for one pinned compiler/backend/
+   device class (M0 evidence: the compute smoke kernel is verified bit-exact
+   against the CPU reference on the reference device);
+3. **cross-device-conformant** — floating outputs within declared per-field
+   tolerances, seams exact (M0 evidence: depth probe values read back at
+   exactly 0.150/0.500/0.900 within ±0.01 on the reference device).
+
+The `helios-asset-manifest` schema carries a `class` field (measured /
+model-derived / procedural / display) and every compiled artifact records its
+generator + SHA-256, so mixed-tier caches can be detected and rejected.
+
+**Revisit if:** M3 shows the accepted tier boundaries do not match GPU
+behavior on the device matrix.
+
+## D-019 — M0 Gaia DR3 catalog-shape experiment
+
+**Status:** Accepted (shape); **data selection pending** · **Date:** 2026-08-16 · **Validate:** M9
+
+**Decision:** the v1 bundled catalog shape is: HEALPix level 6 pages
+(≈0.92° resolution), G-magnitude tiers (G≤6 bright tier, 6<G≤10, 10<G≤12),
+compact 24-byte GPU records, plus a richer CPU metadata page for provenance
+traceability. The record layout and page format are defined in
+`helios_assets` (M9 will finalize exact fields) and the build-time
+determinism rules (canonical `source_id` ordering, units, null policy) are
+specified in [DATA_AND_PROVENANCE.md](DATA_AND_PROVENANCE.md).
+
+**Evidence from M0:** the schema plumbing, bounded page/manifest formats and
+their round-trip/malformed-input tests exist in `helios_assets`; a
+magnitude-tier page count estimate for the bundled subset (G≤12 with quality
+filters ≈ a few hundred thousand sources, well within the v1 storage profile)
+was derived from Gaia DR3 documentation counts. The exact ADQL query and the
+archived query-result hash require Gaia Archive access and are therefore
+**not closed by M0** (see Remaining M0 work).
+
+**Revisit if:** the real query count or bright-star completeness changes the
+page/bundle sizes by more than 2×, or high-proper-motion tests find sources
+crossing page boundaries.
+
+## D-020 — Candidate Earth hero region / data product
+
+**Status:** Candidate only — **decision open** · **Date:** 2026-08-16 · **Validate:** M6
+
+**Decision:** M0 records the candidate profile, not a commitment: one exact
+SRTM/NASADEM 30 m product tile group over a mid-latitude region with a
+checkerboard-free interior (e.g., an Alps or Rocky-Mountain 3°×2° window), with
+vertical datum, void policy, and product-page terms to be recorded before any
+download. The license/terms and hash of the exact product must be documented
+in the M6 selection record; M0 cannot responsibly close this because the
+product terms and a controlled download/validation environment were not
+available (see Remaining M0 work).
+
+**Revisit if:** M6 validation shows the candidate region's voids or datum
+conversion exceed the accepted error budget.

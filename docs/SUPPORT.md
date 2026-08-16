@@ -62,7 +62,7 @@ The initial target to test—not yet a promise—is:
 - bounded RAM/VRAM and p50/p95/p99/max frame-time limits chosen after M0/M4 measurements;
 - the canonical cold- and warm-cache route from [VALIDATION.md](VALIDATION.md).
 
-The final profile must name exact GPUs rather than a year. Reasonable spike candidates include one NVIDIA, one AMD, and—if resources permit—one Intel device representing the intended floor. This list is not a purchase recommendation or support declaration.
+The final profile must name exact GPUs rather than a year. Reasonable spike candidates include one NVIDIA, one AMD, and—if resources permit—one Intel device representing the intended floor. This list is not a purchase recommendation or support declaration. The M0 device matrix still needs AMD and Intel devices.
 
 ## Platform intentions
 
