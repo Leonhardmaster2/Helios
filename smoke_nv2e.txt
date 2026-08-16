@@ -1,4 +1,0 @@
-[32m13:49:13 [info ] Helios 0.1.0 (05c6d7f3292b936a369e8b0089cccd8a1dd7e50e) starting (C:\Users\leonh\Documents\Helios\src\core\include\helios/core/log.hpp:85)
-[0m[32m13:49:13 [info ] === headless smoke (1280x720, 1 iteration(s)) === (C:\Users\leonh\Documents\Helios\src\core\include\helios/core/log.hpp:85)
-[0m[32m13:49:14 [info ] Vulkan instance created (API 1.3.0 requested, runtime 1.4.341) (C:\Users\leonh\Documents\Helios\src\core\include\helios/core/log.hpp:85)
-[0m
