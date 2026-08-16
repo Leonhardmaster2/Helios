@@ -157,19 +157,19 @@ int runWindowed(CliOptions const& options) {
         assets::PerformanceReport performance;
         performance.environment = env;
         performance.cpu_frame_ms = {stats.cpu_frame_ms.count(),
-                                    stats.cpu_frame_ms.percentile(50.0) * 1000.0,
-                                    stats.cpu_frame_ms.percentile(95.0) * 1000.0,
-                                    stats.cpu_frame_ms.percentile(99.0) * 1000.0,
-                                    stats.cpu_frame_ms.max() * 1000.0,
-                                    stats.cpu_frame_ms.min() * 1000.0,
-                                    stats.cpu_frame_ms.average() * 1000.0};
+                                    stats.cpu_frame_ms.percentile(50.0),
+                                    stats.cpu_frame_ms.percentile(95.0),
+                                    stats.cpu_frame_ms.percentile(99.0),
+                                    stats.cpu_frame_ms.max(),
+                                    stats.cpu_frame_ms.min(),
+                                    stats.cpu_frame_ms.average()};
         performance.gpu_frame_ms = {stats.gpu_frame_ms.count(),
-                                    stats.gpu_frame_ms.percentile(50.0) * 1000.0,
-                                    stats.gpu_frame_ms.percentile(95.0) * 1000.0,
-                                    stats.gpu_frame_ms.percentile(99.0) * 1000.0,
-                                    stats.gpu_frame_ms.max() * 1000.0,
-                                    stats.gpu_frame_ms.min() * 1000.0,
-                                    stats.gpu_frame_ms.average() * 1000.0};
+                                    stats.gpu_frame_ms.percentile(50.0),
+                                    stats.gpu_frame_ms.percentile(95.0),
+                                    stats.gpu_frame_ms.percentile(99.0),
+                                    stats.gpu_frame_ms.max(),
+                                    stats.gpu_frame_ms.min(),
+                                    stats.gpu_frame_ms.average()};
         assets::EvidenceReport evidence;
         evidence.environment = env;
         evidence.validation_error_count = renderer->validationErrorCount();
