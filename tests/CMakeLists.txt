@@ -22,8 +22,9 @@ helios_add_test(helios_shader_tests test_shader_abi.cpp LIBS helios_assets helio
 add_dependencies(helios_shader_tests helios_shaders)
 
 # Optional GPU smoke executable: runs the headless smoke suite via the app
-# binary (helios --headless-smoke). Registered but only run where a GPU and
-# validation layers exist.
+# binary (helios --headless-smoke). Only emitted for the "gpu" CTest
+# configuration, which no built-in preset defines: the GPU smoke is run
+# manually (see evidence/m0/commands.md) and on the self-hosted CI runner.
 add_test(NAME helios_headless_smoke
   COMMAND helios --headless-smoke --report-dir ${CMAKE_CURRENT_BINARY_DIR}/headless-smoke-evidence --iterations 1
   CONFIGURATIONS gpu)

@@ -81,6 +81,7 @@ class Instance {
     std::uint32_t instance_version_ = VK_API_VERSION_1_0;
     bool validation_enabled_ = false;
     bool has_debug_utils_ = false;
+    bool has_portability_enumeration_ = false;
     VkDebugUtilsMessengerEXT messenger_ = VK_NULL_HANDLE;
     ValidationStats validation_stats_;
     std::vector<VkExtensionProperties> extensions_;

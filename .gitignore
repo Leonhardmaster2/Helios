@@ -19,6 +19,8 @@ configure.log
 build.log
 *_cfg.log
 *_build.log
+imgui.ini
+Testing/
 
 # Generated dependency-cache wiring
 cmake/deps-cache.cmake

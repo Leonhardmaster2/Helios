@@ -19,6 +19,7 @@ struct CliOptions {
     std::string report_dir = "evidence/m0/local";
     bool validation = true;       // --enable-validation / --disable-validation
     std::uint32_t iterations = 3; // headless smoke iterations per path
+    bool resize_test = false;     // windowed: bounce window size mid-run (swapchain recreation)
     bool smoke_clear = true;
     bool smoke_triangle = true;
     bool smoke_depth = true;

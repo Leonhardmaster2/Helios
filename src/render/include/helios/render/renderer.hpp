@@ -90,6 +90,11 @@ class Renderer {
     void drawDebugUi();
     struct Impl;
     std::unique_ptr<Impl> impl_;
+
+    // Per-swapchain resource helpers (also used on swapchain recreation).
+    static core::Result<void> createSwapchainAttachments(Impl& impl);
+    static core::Result<void> initImGuiVulkanBackend(Impl& impl);
+    static core::Result<void> recreateSwapchainResources(Impl& impl, std::uint32_t w, std::uint32_t h);
     RendererStats stats_;
     DebugUiFrame debug_ui_frame_;
     std::string device_name_;

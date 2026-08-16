@@ -111,6 +111,7 @@ core::Result<std::unique_ptr<Instance>> Instance::create(InstanceOptions const& 
     }
     if (hasExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
         extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        instance->has_portability_enumeration_ = true;
     }
 
     std::vector<char const*> layers;
@@ -143,7 +144,9 @@ core::Result<std::unique_ptr<Instance>> Instance::create(InstanceOptions const& 
     create_info.ppEnabledLayerNames = layers.data();
     create_info.enabledExtensionCount = static_cast<std::uint32_t>(extensions.size());
     create_info.ppEnabledExtensionNames = extensions.data();
-    if (instance->has_debug_utils_) {
+    // The portability flag is only legal when the portability-enumeration
+    // extension is actually enabled (VUID-VkInstanceCreateInfo-flags-04828).
+    if (instance->has_portability_enumeration_) {
         create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     }
 

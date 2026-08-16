@@ -59,48 +59,54 @@ class Log {
 
 // --- free functions --------------------------------------------------------
 
+// Compile-time floor: setting HELIOS_LOG_MIN_LEVEL to e.g. 2 (Info) removes
+// Trace/Debug call sites entirely. Defaults to Trace (0) so nothing is lost.
+#ifndef HELIOS_LOG_MIN_LEVEL
+#define HELIOS_LOG_MIN_LEVEL 0
+#endif
+
 template <typename... Args> void logTrace(std::format_string<Args...> fmt, Args&&... args) {
-    if constexpr (static_cast<int>(LogLevel::Trace) >= static_cast<int>(LogLevel::Off)) {
-        (void)fmt;
-    } else {
+    if constexpr (static_cast<int>(LogLevel::Trace) >= HELIOS_LOG_MIN_LEVEL) {
         Log::instance().log(LogLevel::Trace, std::format(fmt, std::forward<Args>(args)...),
                             std::source_location::current());
+    } else {
+        (void)fmt;
     }
 }
 
 template <typename... Args> void logDebug(std::format_string<Args...> fmt, Args&&... args) {
-    if constexpr (static_cast<int>(LogLevel::Debug) >= static_cast<int>(LogLevel::Off)) {
-        (void)fmt;
-    } else {
+    if constexpr (static_cast<int>(LogLevel::Debug) >= HELIOS_LOG_MIN_LEVEL) {
         Log::instance().log(LogLevel::Debug, std::format(fmt, std::forward<Args>(args)...),
                             std::source_location::current());
+    } else {
+        (void)fmt;
     }
 }
 
 template <typename... Args> void logInfo(std::format_string<Args...> fmt, Args&&... args) {
-    if constexpr (static_cast<int>(LogLevel::Info) >= static_cast<int>(LogLevel::Off)) {
-        (void)fmt;
-    } else {
+    if constexpr (static_cast<int>(LogLevel::Info) >= HELIOS_LOG_MIN_LEVEL) {
         Log::instance().log(LogLevel::Info, std::format(fmt, std::forward<Args>(args)...),
                             std::source_location::current());
+    } else {
+        (void)fmt;
     }
 }
 
 template <typename... Args> void logWarn(std::format_string<Args...> fmt, Args&&... args) {
-    if constexpr (static_cast<int>(LogLevel::Warn) >= static_cast<int>(LogLevel::Off)) {
-        (void)fmt;
-    } else {
+    if constexpr (static_cast<int>(LogLevel::Warn) >= HELIOS_LOG_MIN_LEVEL) {
         Log::instance().log(LogLevel::Warn, std::format(fmt, std::forward<Args>(args)...),
                             std::source_location::current());
+    } else {
+        (void)fmt;
     }
 }
 
 template <typename... Args> void logError(std::format_string<Args...> fmt, Args&&... args) {
-    if constexpr (static_cast<int>(LogLevel::Error) >= static_cast<int>(LogLevel::Off)) {
-        (void)fmt;
-    } else {
+    if constexpr (static_cast<int>(LogLevel::Error) >= HELIOS_LOG_MIN_LEVEL) {
         Log::instance().log(LogLevel::Error, std::format(fmt, std::forward<Args>(args)...),
                             std::source_location::current());
+    } else {
+        (void)fmt;
     }
 }
 

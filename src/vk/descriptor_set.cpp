@@ -94,6 +94,12 @@ DescriptorPool& DescriptorPool::operator=(DescriptorPool&& other) noexcept {
     return *this;
 }
 
+void DescriptorPool::reset() {
+    if (pool_ != VK_NULL_HANDLE && device_ != nullptr) {
+        vkResetDescriptorPool(device_->handle(), pool_, 0);
+    }
+}
+
 void DescriptorPool::destroy() {
     if (pool_ != VK_NULL_HANDLE && device_ != nullptr) {
         vkDestroyDescriptorPool(device_->handle(), pool_, nullptr);

@@ -1,40 +1,40 @@
 {
   "cpu_frame_ms": {
-    "average_ms": 0.5097697499999996,
+    "average_ms": 0.41648550000000023,
     "frame_count": 400,
-    "max_ms": 4.449,
-    "min_ms": 0.2942,
-    "p50_ms": 0.4363,
-    "p95_ms": 0.8457,
-    "p99_ms": 1.1046
+    "max_ms": 3.8942,
+    "min_ms": 0.2455,
+    "p50_ms": 0.3511,
+    "p95_ms": 0.7168,
+    "p99_ms": 1.004
   },
   "environment": {
     "build_type": "RelWithDebInfo",
     "cmake_version": "4.2.0-rc2",
     "compiler": "MSVC 194435228",
     "cpu_name": "Intel64 Family 6 Model 198 Stepping 2, GenuineIntel",
-    "dependency_lock_hash": "5674d616472b52f4077978d1731ea26a5faca734e3103239b5e8b2bffbba0bba",
+    "dependency_lock_hash": "0bceba7a04ce3a9259f98a83fe33e100ef107d9ed5ebb3638901682e0d44c67d",
     "driver_version": "queried-at-runtime",
     "gpu_name": "NVIDIA GeForce RTX 5080",
-    "helios_git_hash": "9d74ec571c43e7ed2022ba66fb27c92c951a745a",
+    "helios_git_hash": "5506f0c3659ea07703b1dbde8fc04960ae672bb1",
     "helios_version": "0.1.0",
     "os_name": "Windows 10.0 (build 26200)",
     "quality_preset": "balanced",
     "resolution": "1280x720",
     "slang_version": "slangc C:/Users/leonh/Documents/Helios/.deps-cache/slang-windows-x64/bin/slangc.exe:\n2026.14.1",
-    "timestamp_utc": "2026-08-16T13:29:15Z",
+    "timestamp_utc": "2026-08-16T14:36:42Z",
     "validation_layers": "enabled"
   },
   "extras": null,
   "format": "helios-performance-report",
   "gpu_frame_ms": {
-    "average_ms": 0.0076619095477386935,
-    "frame_count": 398,
-    "max_ms": 0.012416,
-    "min_ms": 0.006752,
-    "p50_ms": 0.00752,
-    "p95_ms": 0.008864,
-    "p99_ms": 0.0104
+    "average_ms": 0.007656463476070528,
+    "frame_count": 397,
+    "max_ms": 0.011584,
+    "min_ms": 0.00672,
+    "p50_ms": 0.007488,
+    "p95_ms": 0.009088,
+    "p99_ms": 0.00976
   },
   "schema_version": 1
 }

@@ -75,6 +75,8 @@ CliOptions parseCli(int argc, char** argv) {
                     std::fprintf(stderr, "bad --iterations: %s\n", v.c_str());
             } else if (value("--report-dir", v)) {
                 options.report_dir = v;
+            } else if (arg == "--resize-test") {
+                options.resize_test = true;
             } else if (value("--config", v)) {
                 options.config_file = v;
             } else {
@@ -99,6 +101,8 @@ Options:
   --width N --height N      Window/resolution size (default 1280x720).
   --frames N                Render N frames then exit (0 = unlimited).
   --iterations N            Headless smoke repetitions per path (default 3).
+  --resize-test             Windowed: resize the window mid-run to exercise
+                            swapchain recreation (use with --frames N).
   --report-dir DIR          Evidence output directory (default evidence/m0/local).
   --enable-validation       Enable VK_LAYER_KHRONOS_validation (default on).
   --disable-validation      Disable validation layers.

@@ -305,6 +305,10 @@ HeadlessSmoke::~HeadlessSmoke() {
 
 std::vector<SmokePathResult> HeadlessSmoke::run() {
     results_.clear();
+    // Each iteration starts from a fresh pool: path runs allocate descriptor
+    // sets that are released only when the pool is reset (all smoke work is
+    // synchronous, so no GPU references are in flight here).
+    shared_->pool.reset();
     if (options_.clear)
         results_.push_back(runClear());
     if (options_.triangle)

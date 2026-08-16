@@ -8,12 +8,11 @@
 #include "helios/assets/report.hpp"
 #include "helios/core/log.hpp"
 #include "helios/core/profiler.hpp"
-#include "helios/math/mat4.hpp"
 #include "helios/render/renderer.hpp"
 #include "helios/render/reports.hpp"
 
+#include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <filesystem>
 #include <format>
 #include <string>
@@ -27,22 +26,6 @@
 namespace fs = std::filesystem;
 
 namespace helios::app {
-
-namespace {
-
-struct OrbitCamera {
-    float yaw = 0.6f;
-    float pitch = 0.35f;
-    float distance = 2.2f;
-    math::Mat4f view() const {
-        const float cp = std::cos(pitch), sp = std::sin(pitch);
-        const float cy = std::cos(yaw), sy = std::sin(yaw);
-        const math::Vec3f eye{distance * cp * sy, distance * sp, distance * cp * cy};
-        return math::lookAt(eye, math::Vec3f{0, 0, 0}, math::Vec3f{0, 1, 0});
-    }
-};
-
-} // namespace
 
 int runWindowed(CliOptions const& options) {
     core::logInfo("=== windowed smoke ===");
@@ -78,11 +61,18 @@ int runWindowed(CliOptions const& options) {
     }
     auto renderer = std::move(renderer_result.value());
 
-    OrbitCamera camera;
     bool running = true;
     std::uint64_t frame_count = 0;
     bool fullscreen = false;
     double last_cpu_ms = 0.0, last_gpu_ms = 0.0;
+
+    // Resize exercise: bounce the window size mid-run to force swapchain
+    // recreation while the validation layers are watching.
+    int original_w = 0, original_h = 0;
+    if (options.resize_test) {
+        SDL_GetWindowSize(window, &original_w, &original_h);
+        core::logInfo("resize test: {}x{} -> 2/3 -> back", original_w, original_h);
+    }
 
     while (running) {
         HELIOS_ZONE_SCOPED_NAMED("app-loop");
@@ -97,21 +87,13 @@ int runWindowed(CliOptions const& options) {
                     fullscreen = !fullscreen;
                     SDL_SetWindowFullscreen(window, fullscreen);
                 }
-            } else if (event.type == SDL_EVENT_MOUSE_WHEEL) {
-                camera.distance *= std::pow(0.9f, event.wheel.y);
-                camera.distance = std::clamp(camera.distance, 0.5f, 20.0f);
             }
         }
 
-        // Orbit controls (drag + wheel).
-        {
-            float xrel = 0.0f, yrel = 0.0f;
-            bool dragging = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK) != 0;
-            if (dragging) {
-                SDL_GetRelativeMouseState(&xrel, &yrel);
-                camera.yaw += xrel * 0.008f;
-                camera.pitch = std::clamp(camera.pitch + yrel * 0.008f, -1.5f, 1.5f);
-            }
+        if (options.resize_test && frame_count == 20) {
+            SDL_SetWindowSize(window, std::max(320, original_w * 2 / 3), std::max(240, original_h * 2 / 3));
+        } else if (options.resize_test && frame_count == 45) {
+            SDL_SetWindowSize(window, original_w, original_h);
         }
 
         render::Renderer::DebugUiFrame ui;
@@ -123,7 +105,10 @@ int runWindowed(CliOptions const& options) {
         ui.validation_warnings = renderer->validationWarningCount();
         ui.depth_choice = "D32_SFLOAT";
         if (options.frames > 0) {
-            ui.note = std::format("benchmark run: frame {}/{}", frame_count + 1, options.frames);
+            // presented_frames counts actual presents; swapchain-recreation
+            // no-op frames are not renders.
+            ui.note = std::format("benchmark run: frame {}/{}", renderer->stats().presented_frames + 1,
+                                  options.frames);
         }
         renderer->setDebugUiFrame(ui);
 
@@ -133,12 +118,14 @@ int runWindowed(CliOptions const& options) {
         }
         last_cpu_ms = renderer->stats().cpu_frame_ms.max();
         last_gpu_ms = renderer->stats().gpu_frame_ms.count() > 0 ? renderer->stats().gpu_frame_ms.max() : 0.0;
-        ++frame_count;
+        if (keep_going) {
+            ++frame_count; // rendered frames only (renderFrame() stops at max_frames)
+        }
         HELIOS_FRAME_MARK;
     }
 
     // Final evidence: performance summary.
-    core::logInfo("rendered {} frames; closing", frame_count);
+    core::logInfo("rendered {} frames; closing", renderer->stats().presented_frames);
     const auto& stats = renderer->stats();
     core::logInfo("CPU frame time: p50 {:.3f} ms, p95 {:.3f} ms, p99 {:.3f} ms, max {:.3f} ms",
                   stats.cpu_frame_ms.percentile(50.0), stats.cpu_frame_ms.percentile(95.0),

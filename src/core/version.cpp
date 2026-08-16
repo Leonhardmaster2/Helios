@@ -12,7 +12,20 @@ namespace helios {
 #endif
 
 HeliosVersion heliosVersion() noexcept {
-    return HeliosVersion{};
+#ifndef HELIOS_VERSION_MAJOR
+#define HELIOS_VERSION_MAJOR 0
+#endif
+#ifndef HELIOS_VERSION_MINOR
+#define HELIOS_VERSION_MINOR 1
+#endif
+#ifndef HELIOS_VERSION_PATCH
+#define HELIOS_VERSION_PATCH 0
+#endif
+    HeliosVersion v;
+    v.major = HELIOS_VERSION_MAJOR;
+    v.minor = HELIOS_VERSION_MINOR;
+    v.patch = HELIOS_VERSION_PATCH;
+    return v;
 }
 
 std::string_view heliosGitHash() noexcept {

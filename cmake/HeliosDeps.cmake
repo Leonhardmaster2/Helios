@@ -40,7 +40,7 @@ set(TRACY_STATIC ON CACHE BOOL "" FORCE)
 set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
 set(TRACY_ON_DEMAND ON CACHE BOOL "" FORCE)
 set(TRACY_NO_FRAME_IMAGE ON CACHE BOOL "" FORCE)
-set(TRACY_NO_EXIT ON CACHE BOOL "" FORCE)
+set(TRACY_NO_EXIT OFF CACHE BOOL "" FORCE) # must stay OFF: it removes the worker's ShouldExit() check
 
 # --- Dear ImGui (MIT) ------------------------------------------------------
 FetchContent_Declare(ImGui

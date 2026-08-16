@@ -77,7 +77,8 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "HELIOS_BUILD_TESTS": "ON",
         "HELIOS_ENABLE_ASAN": "ON",
-        "HELIOS_ENABLE_VALIDATION": "OFF"
+        "HELIOS_ENABLE_VALIDATION": "OFF",
+        "HELIOS_ENABLE_TRACY": "OFF"
       }
     },
     {
@@ -129,7 +130,8 @@
       "cacheVariables": {
         "HELIOS_BUILD_TESTS": "ON",
         "HELIOS_ENABLE_VALIDATION": "OFF",
-        "HELIOS_ENABLE_ASAN": "ON"
+        "HELIOS_ENABLE_ASAN": "ON",
+        "HELIOS_ENABLE_TRACY": "OFF"
       }
     }
   ],

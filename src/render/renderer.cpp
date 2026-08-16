@@ -78,6 +78,138 @@ struct Renderer::Impl {
 
 Renderer::Impl::~Impl() = default;
 
+namespace {
+
+VkFormat pickDepthFormat(vk::Device const& device) {
+    return device.report().depth_choice == vk::DepthFormatChoice::D32Sfloat     ? VK_FORMAT_D32_SFLOAT
+           : device.report().depth_choice == vk::DepthFormatChoice::D32SfloatS8 ? VK_FORMAT_D32_SFLOAT_S8_UINT
+                                                                                : VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+} // namespace
+
+// Per-swapchain-image views, render-finished semaphores, and the depth
+// attachment. The semaphores are indexed by swapchain image index, so they
+// must be rebuilt whenever the swapchain is (image count can change).
+core::Result<void> Renderer::createSwapchainAttachments(Renderer::Impl& impl) {
+    for (auto image : impl.swapchain->images()) {
+        VkImageViewCreateInfo vci{};
+        vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        vci.image = image;
+        vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        vci.format = impl.swapchain_format;
+        vci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        VkImageView view = VK_NULL_HANDLE;
+        if (vkCreateImageView(impl.device->handle(), &vci, nullptr, &view) != VK_SUCCESS) {
+            return core::makeError(core::ErrorCode::Vulkan, "swapchain image view creation failed");
+        }
+        impl.swapchain_image_views.push_back(view);
+    }
+    for (std::uint32_t i = 0; i < impl.swapchain->images().size(); ++i) {
+        VkSemaphoreCreateInfo sem_info{};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkSemaphore sem = VK_NULL_HANDLE;
+        if (vkCreateSemaphore(impl.device->handle(), &sem_info, nullptr, &sem) != VK_SUCCESS) {
+            return core::makeError(core::ErrorCode::Vulkan, "render-finished semaphore creation failed");
+        }
+        impl.device->setDebugName(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<std::uint64_t>(sem),
+                                  "render-finished[" + std::to_string(i) + "]");
+        impl.render_finished.push_back(sem);
+    }
+
+    // Depth attachment sized to the swapchain extent.
+    const VkFormat depth_format = pickDepthFormat(*impl.device);
+    auto depth_image = vk::Image::create(*impl.device, VkExtent2D{impl.width, impl.height}, depth_format,
+                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, false, "window-depth");
+    if (depth_image.failed()) {
+        return depth_image.error();
+    }
+    impl.depth.image = std::move(depth_image.value());
+    VkImageViewCreateInfo view_info{};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = impl.depth.image.handle();
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = depth_format;
+    view_info.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    if (vkCreateImageView(impl.device->handle(), &view_info, nullptr, &impl.depth.view) != VK_SUCCESS) {
+        return core::makeError(core::ErrorCode::Vulkan, "depth image view creation failed");
+    }
+    impl.device->setDebugName(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<std::uint64_t>(impl.depth.view),
+                              "window-depth-view");
+    return core::Result<void>{};
+}
+
+#ifdef HELIOS_ENABLE_IMGUI
+core::Result<void> Renderer::initImGuiVulkanBackend(Renderer::Impl& impl) {
+    ImGui_ImplVulkan_InitInfo init_info{};
+    init_info.ApiVersion = VK_API_VERSION_1_3;
+    init_info.Instance = impl.instance->handle();
+    init_info.PhysicalDevice = impl.device->physicalDevice();
+    init_info.Device = impl.device->handle();
+    init_info.QueueFamily = impl.device->graphicsQueueFamily();
+    init_info.Queue = impl.device->graphicsQueue();
+    init_info.DescriptorPoolSize = 64; // ImGui creates its own pool
+    init_info.MinImageCount = 2;
+    init_info.ImageCount = static_cast<std::uint32_t>(impl.frames.size());
+    init_info.UseDynamicRendering = true;
+    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.PipelineInfoMain.PipelineRenderingCreateInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    init_info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &impl.swapchain_format;
+    if (!ImGui_ImplVulkan_Init(&init_info)) {
+        return core::makeError(core::ErrorCode::Initialization, "ImGui_ImplVulkan_Init failed");
+    }
+    impl.imgui_initialized = true;
+    return core::Result<void>{};
+}
+#endif
+
+// Full teardown + rebuild of every per-swapchain resource after the
+// swapchain itself is recreated (window resize / OUT_OF_DATE). Called with
+// the device idle so no in-flight work references the destroyed objects.
+core::Result<void> Renderer::recreateSwapchainResources(Renderer::Impl& impl, std::uint32_t w,
+                                                        std::uint32_t h) {
+    vkDeviceWaitIdle(impl.device->handle());
+#ifdef HELIOS_ENABLE_IMGUI
+    if (impl.imgui_enabled && impl.imgui_initialized) {
+        ImGui_ImplVulkan_Shutdown();
+        impl.imgui_initialized = false;
+    }
+#endif
+    for (VkImageView v : impl.swapchain_image_views) {
+        vkDestroyImageView(impl.device->handle(), v, nullptr);
+    }
+    impl.swapchain_image_views.clear();
+    for (VkSemaphore sem : impl.render_finished) {
+        vkDestroySemaphore(impl.device->handle(), sem, nullptr);
+    }
+    impl.render_finished.clear();
+    if (impl.depth.view != VK_NULL_HANDLE) {
+        vkDestroyImageView(impl.device->handle(), impl.depth.view, nullptr);
+        impl.depth.view = VK_NULL_HANDLE;
+    }
+    impl.depth.image = vk::Image{}; // releases the old depth image
+
+    if (impl.swapchain->recreate(w, h).failed()) {
+        return core::makeError(core::ErrorCode::Vulkan, "swapchain recreation failed");
+    }
+    impl.width = impl.swapchain->info().extent.width;
+    impl.height = impl.swapchain->info().extent.height;
+    impl.swapchain_format = impl.swapchain->info().format;
+
+    auto attachments = createSwapchainAttachments(impl);
+    if (attachments.failed()) {
+        return attachments.error();
+    }
+#ifdef HELIOS_ENABLE_IMGUI
+    if (impl.imgui_enabled) {
+        return initImGuiVulkanBackend(impl);
+    }
+#endif
+    return core::Result<void>{};
+}
+
 core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo const& info) {
     auto renderer = std::unique_ptr<Renderer>(new Renderer());
     auto impl = std::make_unique<Impl>();
@@ -122,65 +254,21 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
     impl->width = impl->swapchain->info().extent.width;
     impl->height = impl->swapchain->info().extent.height;
     impl->swapchain_format = impl->swapchain->info().format;
-    // Per-swapchain-image render-finished semaphores (reuse-safe).
-    for (std::uint32_t i = 0; i < impl->swapchain->images().size(); ++i) {
-        VkSemaphoreCreateInfo sem_info{};
-        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        VkSemaphore sem = VK_NULL_HANDLE;
-        if (vkCreateSemaphore(impl->device->handle(), &sem_info, nullptr, &sem) != VK_SUCCESS) {
-            return core::makeError(core::ErrorCode::Vulkan, "render-finished semaphore creation failed");
-        }
-        impl->device->setDebugName(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<std::uint64_t>(sem),
-                                   "render-finished[" + std::to_string(i) + "]");
-        impl->render_finished.push_back(sem);
-    }
-    for (auto image : impl->swapchain->images()) {
-        VkImageViewCreateInfo vci{};
-        vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        vci.image = image;
-        vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        vci.format = impl->swapchain_format;
-        vci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        VkImageView view = VK_NULL_HANDLE;
-        if (vkCreateImageView(impl->device->handle(), &vci, nullptr, &view) != VK_SUCCESS) {
-            return core::makeError(core::ErrorCode::Vulkan, "swapchain image view creation failed");
-        }
-        impl->swapchain_image_views.push_back(view);
+
+    auto attachments = createSwapchainAttachments(*impl);
+    if (attachments.failed()) {
+        return attachments.error();
     }
 
-    // Frames in flight.
-    const std::uint32_t frame_count = std::max(2u, impl->swapchain->info().image_count > 2 ? 2u : 2u);
-    for (std::uint32_t i = 0; i < frame_count; ++i) {
+    // Frames in flight (independent of swapchain image count).
+    constexpr std::uint32_t kFramesInFlight = 2;
+    for (std::uint32_t i = 0; i < kFramesInFlight; ++i) {
         auto frame = createFrameContext(*impl->device, std::to_string(i));
         if (frame.failed()) {
             return frame.error();
         }
         impl->frames.push_back(std::move(frame.value()));
     }
-
-    // Depth attachment for windowed depth probes.
-    VkFormat depth_format = impl->device->report().depth_choice == vk::DepthFormatChoice::D32Sfloat
-                                ? VK_FORMAT_D32_SFLOAT
-                            : impl->device->report().depth_choice == vk::DepthFormatChoice::D32SfloatS8
-                                ? VK_FORMAT_D32_SFLOAT_S8_UINT
-                                : VK_FORMAT_D24_UNORM_S8_UINT;
-    auto depth_image = vk::Image::create(*impl->device, VkExtent2D{impl->width, impl->height}, depth_format,
-                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, false, "window-depth");
-    if (depth_image.failed()) {
-        return depth_image.error();
-    }
-    impl->depth.image = std::move(depth_image.value());
-    VkImageViewCreateInfo view_info{};
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.image = impl->depth.image.handle();
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_info.format = depth_format;
-    view_info.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
-    if (vkCreateImageView(impl->device->handle(), &view_info, nullptr, &impl->depth.view) != VK_SUCCESS) {
-        return core::makeError(core::ErrorCode::Vulkan, "depth image view creation failed");
-    }
-    impl->device->setDebugName(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<std::uint64_t>(impl->depth.view),
-                               "window-depth-view");
 
     // GPU frame timing pool.
     auto timestamps = vk::QueryPool::create(*impl->device, VK_QUERY_TYPE_TIMESTAMP, 4, "frame-timestamps");
@@ -190,13 +278,16 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
     impl->timestamp_pool = std::move(timestamps.value());
 
     // Smoke scene (windowed).
-    auto scene = vk::smoke::WindowedSmokeScene::create(*impl->device, impl->swapchain_format, depth_format);
+    auto scene = vk::smoke::WindowedSmokeScene::create(*impl->device, impl->swapchain_format,
+                                                       pickDepthFormat(*impl->device));
     if (scene.failed()) {
         return scene.error();
     }
     impl->scene = std::move(scene.value());
 
-    // ImGui initialization.
+    // ImGui initialization (context + SDL3 backend once; the Vulkan
+    // backend is (re)initialized by initImGuiVulkanBackend, including after
+    // swapchain recreation).
     if (impl->imgui_enabled) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -213,27 +304,10 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
             },
             &instance_handle);
 
-        ImGui_ImplVulkan_InitInfo init_info{};
-        init_info.ApiVersion = VK_API_VERSION_1_3;
-        init_info.Instance = impl->instance->handle();
-        init_info.PhysicalDevice = impl->device->physicalDevice();
-        init_info.Device = impl->device->handle();
-        init_info.QueueFamily = impl->device->graphicsQueueFamily();
-        init_info.Queue = impl->device->graphicsQueue();
-        init_info.DescriptorPoolSize = 64; // ImGui creates its own pool
-        init_info.MinImageCount = 2;
-        init_info.ImageCount = static_cast<std::uint32_t>(impl->frames.size());
-        init_info.UseDynamicRendering = true;
-        init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats =
-            &impl->swapchain_format;
-        if (!ImGui_ImplVulkan_Init(&init_info)) {
-            return core::makeError(core::ErrorCode::Initialization, "ImGui_ImplVulkan_Init failed");
+        auto imgui_init = initImGuiVulkanBackend(*impl);
+        if (imgui_init.failed()) {
+            return imgui_init.error();
         }
-        impl->imgui_initialized = true;
         // Font atlas texture is created during ImGui_ImplVulkan_Init (new API).
     }
 
@@ -299,10 +373,6 @@ bool Renderer::renderFrame() {
         core::logError("fence wait failed");
         return false;
     }
-    // Reset BEFORE acquire: the same fence is handed to vkAcquireNextImageKHR
-    // (it must be unsignaled) and later to vkQueueSubmit2.
-    vkResetFences(impl.device->handle(), 1, &frame.in_flight);
-
     // Acquire next swapchain image. The fence tracks only the queue submit;
     // the acquire is synchronized via the image-available semaphore (one
     // fence cannot be associated with both the acquire and the submit).
@@ -315,33 +385,21 @@ bool Renderer::renderFrame() {
             SDL_Window* win = impl.window;
             int w = 0, h = 0;
             SDL_GetWindowSizeInPixels(win, &w, &h);
-            if (impl.swapchain->recreate(static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h))
+            if (recreateSwapchainResources(impl, static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h))
                     .failed()) {
                 core::logError("swapchain recreation failed");
                 return false;
             }
-            for (VkImageView v : impl.swapchain_image_views) {
-                vkDestroyImageView(impl.device->handle(), v, nullptr);
-            }
-            impl.swapchain_image_views.clear();
-            for (auto image : impl.swapchain->images()) {
-                VkImageViewCreateInfo vci{};
-                vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                vci.image = image;
-                vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                vci.format = impl.swapchain_format;
-                vci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-                VkImageView view = VK_NULL_HANDLE;
-                vkCreateImageView(impl.device->handle(), &vci, nullptr, &view);
-                impl.swapchain_image_views.push_back(view);
-            }
-            impl.width = impl.swapchain->info().extent.width;
-            impl.height = impl.swapchain->info().extent.height;
             return true; // try again next frame
         }
         return false;
     }
     image_index = acquire.value();
+
+    // Reset the submit fence only after a successful acquire: when acquire
+    // fails (OUT_OF_DATE) this frame submits nothing, so the fence must stay
+    // signaled or the next frame's wait would block forever.
+    vkResetFences(impl.device->handle(), 1, &frame.in_flight);
 
     // Begin recording.
     VkCommandBufferBeginInfo begin{};
@@ -519,11 +577,10 @@ bool Renderer::renderFrame() {
         SDL_Window* win = impl.window;
         int w = 0, h = 0;
         SDL_GetWindowSizeInPixels(win, &w, &h);
-        if (impl.swapchain->recreate(static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h)).failed()) {
+        if (recreateSwapchainResources(impl, static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h))
+                .failed()) {
             core::logError("swapchain recreation failed");
         }
-        impl.width = impl.swapchain->info().extent.width;
-        impl.height = impl.swapchain->info().extent.height;
     }
 
     // Timing.

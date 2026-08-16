@@ -74,11 +74,15 @@ nlohmann::json deviceReportToJson(DeviceReport const& r) {
     }
     j["queue_families"] = std::move(qf);
     j["used_queue_family"] = r.used_queue_family;
-    j["features"] = nlohmann::json{
-        {"dynamic_rendering", r.dynamic_rendering},     {"synchronization2", r.synchronization2},
-        {"timeline_semaphore", r.timeline_semaphore},   {"buffer_device_address", r.buffer_device_address},
-        {"descriptor_indexing", r.descriptor_indexing}, {"host_query_reset", r.host_query_reset},
-        {"shader_float64", r.shader_float64},           {"maintenance4", r.maintenance4}};
+    j["features"] = nlohmann::json{{"dynamic_rendering", r.dynamic_rendering},
+                                   {"synchronization2", r.synchronization2},
+                                   {"timeline_semaphore", r.timeline_semaphore},
+                                   {"buffer_device_address", r.buffer_device_address},
+                                   {"descriptor_indexing", r.descriptor_indexing},
+                                   {"host_query_reset", r.host_query_reset},
+                                   {"shader_float64", r.shader_float64},
+                                   {"maintenance4", r.maintenance4},
+                                   {"shader_draw_parameters", r.shader_draw_parameters}};
     j["timestamp_period_ns"] = r.timestamp_period_ns;
     j["timestamp_compute_and_graphics"] = r.timestamp_compute_and_graphics;
     j["depth_formats"] = nlohmann::json{{"D32_SFLOAT", r.depth_d32_sfloat},

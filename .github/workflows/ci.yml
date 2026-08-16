@@ -113,7 +113,8 @@ jobs:
       - name: Build
         run: cmake --build --preset asan --parallel
       - name: Run tests under sanitizers
-        run: ctest --preset ci -E helios_headless_smoke --output-on-failure
+        # ctest must target the build tree the job actually configured (asan).
+        run: ctest --preset asan -E helios_headless_smoke --output-on-failure
         env:
           ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
           UBSAN_OPTIONS: halt_on_error=1

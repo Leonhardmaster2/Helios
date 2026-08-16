@@ -54,6 +54,11 @@ class DescriptorPool {
     // Allocates one set (fails when the pool is exhausted).
     [[nodiscard]] core::Result<VkDescriptorSet> allocate(VkDescriptorSetLayout layout) const;
 
+    // Returns all allocated sets to the pool (valid only when no GPU work
+    // referencing them is in flight; the smoke suite calls this between
+    // iterations).
+    void reset();
+
   private:
     void destroy();
     Device* device_ = nullptr;

@@ -43,11 +43,13 @@ static_assert(sizeof(ComputeParams) == 8);
 static_assert(offsetof(ComputeParams, count) == 0);
 static_assert(offsetof(ComputeParams, seed) == 4);
 
-// Expected SPIR-V entry points (reflection test).
-inline constexpr char const* kTriangleVertexEntry = "vsMain";
-inline constexpr char const* kTriangleFragmentEntry = "fsMain";
-inline constexpr char const* kDepthVertexEntry = "vsMain";
-inline constexpr char const* kDepthFragmentEntry = "fsMain";
-inline constexpr char const* kComputeEntry = "csMain";
+// Expected SPIR-V entry points (reflection test). Slang renames every
+// entry to "main" in the generated SPIR-V module, which is what the
+// reflection test (tests/test_shader_abi.cpp) and the pipeline bindings use.
+inline constexpr char const* kTriangleVertexEntry = "main";
+inline constexpr char const* kTriangleFragmentEntry = "main";
+inline constexpr char const* kDepthVertexEntry = "main";
+inline constexpr char const* kDepthFragmentEntry = "main";
+inline constexpr char const* kComputeEntry = "main";
 
 } // namespace helios::shaders

@@ -77,13 +77,13 @@
     "vma_header": {
       "kind": "file",
       "url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/v3.2.1/include/vk_mem_alloc.h",
-      "sha256": "",
+      "sha256": "1869d860b9713dda74f9d226d85b3a16c1c360b5430e56b5a54131c4d9fdf168",
       "dest": "third_party/VMA/vk_mem_alloc.h"
     },
     "vma_license": {
       "kind": "file",
       "url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/v3.2.1/LICENSE.txt",
-      "sha256": "",
+      "sha256": "8d70e4cf2a9941f6454da71cd60e38484dd3e34810c824760d550e982af6d97a",
       "dest": "third_party/VMA/LICENSE.txt"
     },
     "doctest_header": {

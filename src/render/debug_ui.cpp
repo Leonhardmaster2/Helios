@@ -57,7 +57,7 @@ void Renderer::drawDebugUi() {
     if (!ui.note.empty()) {
         ImGui::Text("Note: %s", ui.note.c_str());
     }
-    ImGui::TextWrapped("Controls: drag to orbit, wheel to zoom, ESC/Q to quit, F11 toggles fullscreen");
+    ImGui::TextWrapped("Controls: ESC/Q to quit, F11 toggles fullscreen");
     ImGui::End();
 #endif
 }

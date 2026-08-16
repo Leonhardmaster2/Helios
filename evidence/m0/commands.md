@@ -19,6 +19,13 @@ build/windows-dev/src/app/RelWithDebInfo/helios.exe --headless-smoke --iteration
 # 5. Windowed smoke (SDL3 window, ImGui overlay; closes itself after N frames)
 build/windows-dev/src/app/RelWithDebInfo/helios.exe --frames 400 --report-dir evidence/m0/perf
 
+# 5b. Swapchain-recreation exercise (window resized twice mid-run, validation on)
+build/windows-dev/src/app/RelWithDebInfo/helios.exe --frames 90 --resize-test --report-dir evidence/m0/resize
+
+# 5c. MSVC ASan unit tests (asan runtime DLL must be on PATH, e.g. from vcvars64.bat)
+cmake --preset windows-asan; cmake --build --preset windows-asan
+ctest --test-dir build/windows-asan -C Debug --output-on-failure
+
 # 6. Formatting check (clang-format 15+)
 #    clang-format -style=file --dry-run --Werror $(Get-ChildItem src,tests -Recurse -Include *.cpp,*.hpp,*.h | % FullName)
 
