@@ -25,10 +25,10 @@ inline constexpr std::string_view kFormatAssetManifest = "helios-asset-manifest"
 
 // Provenance classes (docs/DATA_AND_PROVENANCE.md).
 enum class DataClass : std::uint8_t {
-    Measured = 0,      // instrument/survey product with recorded provenance
-    ModelDerived = 1,  // evaluated from a named mathematical model
-    Procedural = 2,    // generated plausible detail — never "measured"
-    Display = 3,       // presentation transform, no source accuracy added
+    Measured = 0,     // instrument/survey product with recorded provenance
+    ModelDerived = 1, // evaluated from a named mathematical model
+    Procedural = 2,   // generated plausible detail — never "measured"
+    Display = 3,      // presentation transform, no source accuracy added
 };
 
 [[nodiscard]] std::string_view toString(DataClass cls) noexcept;

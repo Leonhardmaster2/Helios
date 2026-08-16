@@ -21,7 +21,8 @@ struct FrameHistory {
     std::array<float, 120> samples{};
     std::size_t count = 0;
     void add(double ms) {
-        if (count < samples.size()) samples[count++] = static_cast<float>(ms);
+        if (count < samples.size())
+            samples[count++] = static_cast<float>(ms);
     }
 };
 FrameHistory g_history;

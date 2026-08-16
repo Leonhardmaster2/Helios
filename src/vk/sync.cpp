@@ -242,8 +242,9 @@ core::Result<void> QueryPool::reset(std::uint32_t first, std::uint32_t count) co
 core::Result<void> QueryPool::getResults(std::uint32_t first, std::uint32_t count,
                                          std::vector<std::uint64_t>& out) const {
     out.resize(count);
-    const VkResult r = vkGetQueryPoolResults(device_->handle(), pool_, first, count, out.size() * sizeof(out[0]),
-                                             out.data(), sizeof(out[0]), VK_QUERY_RESULT_64_BIT);
+    const VkResult r =
+        vkGetQueryPoolResults(device_->handle(), pool_, first, count, out.size() * sizeof(out[0]), out.data(),
+                              sizeof(out[0]), VK_QUERY_RESULT_64_BIT);
     if (r != VK_SUCCESS) {
         return core::makeError(core::ErrorCode::Vulkan,
                                "vkGetQueryPoolResults failed: " + std::to_string(static_cast<int>(r)));

@@ -19,14 +19,15 @@ core::Result<Buffer> Buffer::create(Device& device, VkDeviceSize size, VkBufferU
     buffer.allocator_ = device.allocator();
     buffer.size_ = size;
 
-    const VkBuffer handle = createBuffer(
-        device.allocator(), size, usage,
-        host_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
-        host_visible ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-                     : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        buffer.buffer_, buffer.allocation_);
+    const VkBuffer handle =
+        createBuffer(device.allocator(), size, usage,
+                     host_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+                     host_visible ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+                                  : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                     buffer.buffer_, buffer.allocation_);
     if (handle == VK_NULL_HANDLE) {
-        return core::makeError(core::ErrorCode::Vulkan, "buffer allocation failed: " + std::string(debug_name));
+        return core::makeError(core::ErrorCode::Vulkan,
+                               "buffer allocation failed: " + std::string(debug_name));
     }
     device.setDebugName(VK_OBJECT_TYPE_BUFFER, reinterpret_cast<std::uint64_t>(buffer.buffer_), debug_name);
     return buffer;

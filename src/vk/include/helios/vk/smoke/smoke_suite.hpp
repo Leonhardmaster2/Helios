@@ -29,7 +29,7 @@ struct SmokeOptions {
     bool compute = true;
     bool transfer = true;
     bool timestamp = true;
-    std::uint32_t iterations = 3;   // repetitions per path
+    std::uint32_t iterations = 3; // repetitions per path
     std::uint32_t width = 640;
     std::uint32_t height = 480;
 };
@@ -37,26 +37,28 @@ struct SmokeOptions {
 struct SmokePathResult {
     std::string name;
     bool pass = false;
-    std::string detail;       // evidence summary
-    nlohmann::json metrics;   // measurements (timings, checks)
+    std::string detail;     // evidence summary
+    nlohmann::json metrics; // measurements (timings, checks)
 };
 
 // Runs the full suite headless (offscreen target; no window/swapchain).
 class HeadlessSmoke {
-public:
+  public:
     ~HeadlessSmoke();
     HeadlessSmoke(HeadlessSmoke const&) = delete;
     HeadlessSmoke& operator=(HeadlessSmoke const&) = delete;
 
-    [[nodiscard]] static core::Result<std::unique_ptr<HeadlessSmoke>> create(
-        Instance& instance, Device& device, SmokeOptions const& options);
+    [[nodiscard]] static core::Result<std::unique_ptr<HeadlessSmoke>>
+    create(Instance& instance, Device& device, SmokeOptions const& options);
 
     // Runs all requested paths; returns per-path results (never throws).
     [[nodiscard]] std::vector<SmokePathResult> run();
 
-    [[nodiscard]] SmokeContext& context() noexcept { return *context_; }
+    [[nodiscard]] SmokeContext& context() noexcept {
+        return *context_;
+    }
 
-private:
+  private:
     HeadlessSmoke() = default;
     void destroy();
 
@@ -80,19 +82,19 @@ private:
 // into an already-started dynamic-rendering pass on the given image.
 // Used by helios_render for the interactive window path.
 class WindowedSmokeScene {
-public:
+  public:
     ~WindowedSmokeScene();
     WindowedSmokeScene(WindowedSmokeScene const&) = delete;
     WindowedSmokeScene& operator=(WindowedSmokeScene const&) = delete;
 
-    [[nodiscard]] static core::Result<std::unique_ptr<WindowedSmokeScene>> create(
-        Device& device, VkFormat color_format, VkFormat depth_format);
+    [[nodiscard]] static core::Result<std::unique_ptr<WindowedSmokeScene>>
+    create(Device& device, VkFormat color_format, VkFormat depth_format);
 
     // Records clear + triangle + depth probes. Pass must already have
     // color+depth attachments bound via dynamic rendering.
     void record(VkCommandBuffer cmd, VkExtent2D extent, std::uint32_t frame_index);
 
-private:
+  private:
     WindowedSmokeScene() = default;
     void destroy();
 

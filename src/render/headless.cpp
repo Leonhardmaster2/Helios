@@ -65,11 +65,13 @@ core::Result<HeadlessSmokeOutcome> runHeadlessSmoke(HeadlessSmokeOptions const& 
                 pr.detail = r.detail;
                 pr.metrics = r.metrics;
                 path_results.push_back(std::move(pr));
-                if (!r.pass) ++failures;
+                if (!r.pass)
+                    ++failures;
             }
         } else {
             for (auto const& r : results) {
-                if (!r.pass) ++failures;
+                if (!r.pass)
+                    ++failures;
             }
         }
     }
@@ -83,8 +85,8 @@ core::Result<HeadlessSmokeOutcome> runHeadlessSmoke(HeadlessSmokeOptions const& 
 
     // ---- evidence reports ----
     const bool validation_enabled = instance.value()->validationEnabled();
-    assets::EnvironmentInfo env = collectEnvironment(
-        std::format("{}x{}", options.width, options.height), validation_enabled);
+    assets::EnvironmentInfo env =
+        collectEnvironment(std::format("{}x{}", options.width, options.height), validation_enabled);
     env.gpu_name = device.value()->report().device_name;
     env.driver_version = device.value()->report().driver_info;
 

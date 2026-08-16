@@ -18,9 +18,8 @@ Result<std::vector<std::uint8_t>> readBinaryFile(std::string_view path, std::uin
         return makeError(ErrorCode::Io, "cannot stat file: " + std::string(path) + " (" + ec.message() + ")");
     }
     if (size > max_size) {
-        return makeError(ErrorCode::OutOfRange,
-                         "file exceeds size limit (" + std::to_string(size) + " > " + std::to_string(max_size) +
-                             "): " + std::string(path));
+        return makeError(ErrorCode::OutOfRange, "file exceeds size limit (" + std::to_string(size) + " > " +
+                                                    std::to_string(max_size) + "): " + std::string(path));
     }
     std::ifstream in(std::string(path), std::ios::binary);
     if (!in) {

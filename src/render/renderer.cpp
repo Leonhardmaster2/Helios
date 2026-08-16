@@ -9,9 +9,9 @@
 #include "helios/core/log.hpp"
 #include "helios/core/profiler.hpp"
 #include "helios/render/frame.hpp"
+#include "helios/vk/command.hpp"
 #include "helios/vk/device.hpp"
 #include "helios/vk/instance.hpp"
-#include "helios/vk/command.hpp"
 #include "helios/vk/smoke/smoke_suite.hpp"
 #include "helios/vk/swapchain.hpp"
 #include "helios/vk/sync.hpp"
@@ -70,6 +70,8 @@ struct Renderer::Impl {
     bool imgui_initialized = false;
     // Swapchain image views (rebuilt on swapchain recreation)
     std::vector<VkImageView> swapchain_image_views;
+    // Render-finished semaphores, indexed by swapchain image.
+    std::vector<VkSemaphore> render_finished;
 
     ~Impl();
 };
@@ -120,6 +122,18 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
     impl->width = impl->swapchain->info().extent.width;
     impl->height = impl->swapchain->info().extent.height;
     impl->swapchain_format = impl->swapchain->info().format;
+    // Per-swapchain-image render-finished semaphores (reuse-safe).
+    for (std::uint32_t i = 0; i < impl->swapchain->images().size(); ++i) {
+        VkSemaphoreCreateInfo sem_info{};
+        sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkSemaphore sem = VK_NULL_HANDLE;
+        if (vkCreateSemaphore(impl->device->handle(), &sem_info, nullptr, &sem) != VK_SUCCESS) {
+            return core::makeError(core::ErrorCode::Vulkan, "render-finished semaphore creation failed");
+        }
+        impl->device->setDebugName(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<std::uint64_t>(sem),
+                                   "render-finished[" + std::to_string(i) + "]");
+        impl->render_finished.push_back(sem);
+    }
     for (auto image : impl->swapchain->images()) {
         VkImageViewCreateInfo vci{};
         vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -147,9 +161,9 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
     // Depth attachment for windowed depth probes.
     VkFormat depth_format = impl->device->report().depth_choice == vk::DepthFormatChoice::D32Sfloat
                                 ? VK_FORMAT_D32_SFLOAT
-                                : impl->device->report().depth_choice == vk::DepthFormatChoice::D32SfloatS8
-                                      ? VK_FORMAT_D32_SFLOAT_S8_UINT
-                                      : VK_FORMAT_D24_UNORM_S8_UINT;
+                            : impl->device->report().depth_choice == vk::DepthFormatChoice::D32SfloatS8
+                                ? VK_FORMAT_D32_SFLOAT_S8_UINT
+                                : VK_FORMAT_D24_UNORM_S8_UINT;
     auto depth_image = vk::Image::create(*impl->device, VkExtent2D{impl->width, impl->height}, depth_format,
                                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, false, "window-depth");
     if (depth_image.failed()) {
@@ -190,6 +204,15 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
 
         ImGui_ImplSDL3_InitForVulkan(info.window);
 
+        // volk integration: provide the Vulkan function loader to the backend.
+        VkInstance instance_handle = impl->instance->handle();
+        ImGui_ImplVulkan_LoadFunctions(
+            VK_API_VERSION_1_3,
+            [](char const* name, void* user_data) {
+                return vkGetInstanceProcAddr(*static_cast<VkInstance*>(user_data), name);
+            },
+            &instance_handle);
+
         ImGui_ImplVulkan_InitInfo init_info{};
         init_info.ApiVersion = VK_API_VERSION_1_3;
         init_info.Instance = impl->instance->handle();
@@ -205,7 +228,8 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
         init_info.PipelineInfoMain.PipelineRenderingCreateInfo.sType =
             VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         init_info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &impl->swapchain_format;
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats =
+            &impl->swapchain_format;
         if (!ImGui_ImplVulkan_Init(&init_info)) {
             return core::makeError(core::ErrorCode::Initialization, "ImGui_ImplVulkan_Init failed");
         }
@@ -234,24 +258,32 @@ Renderer::~Renderer() {
             vkDestroyImageView(impl_->device->handle(), impl_->depth.view, nullptr);
             impl_->depth.view = VK_NULL_HANDLE;
         }
+        // RAII members that hold device objects must be released while the
+        // device is still alive (destruction order matters!).
+        impl_->timestamp_pool = vk::QueryPool{};
+        impl_->depth.image = vk::Image{};
 #ifdef HELIOS_ENABLE_IMGUI
         if (impl_->imgui_initialized) {
             ImGui_ImplVulkan_Shutdown();
             ImGui_ImplSDL3_Shutdown();
             ImGui::DestroyContext();
+            impl_->imgui_initialized = false;
         }
 #endif
+        for (VkSemaphore sem : impl_->render_finished) {
+            vkDestroySemaphore(impl_->device->handle(), sem, nullptr);
+        }
+        impl_->render_finished.clear();
+        impl_->scene.reset();
+        impl_->owned_swapchain.reset(); // swapchain must die before the surface
         if (impl_->surface != VK_NULL_HANDLE) {
             vkDestroySurfaceKHR(impl_->instance->handle(), impl_->surface, nullptr);
             impl_->surface = VK_NULL_HANDLE;
         }
-        impl_->scene.reset();
-        impl_->owned_swapchain.reset();
         impl_->owned_device.reset();
         impl_->owned_instance.reset();
     }
 }
-
 bool Renderer::renderFrame() {
     HELIOS_ZONE_SCOPED;
     auto& impl = *impl_;
@@ -267,10 +299,15 @@ bool Renderer::renderFrame() {
         core::logError("fence wait failed");
         return false;
     }
+    // Reset BEFORE acquire: the same fence is handed to vkAcquireNextImageKHR
+    // (it must be unsignaled) and later to vkQueueSubmit2.
+    vkResetFences(impl.device->handle(), 1, &frame.in_flight);
 
-    // Acquire next swapchain image.
+    // Acquire next swapchain image. The fence tracks only the queue submit;
+    // the acquire is synchronized via the image-available semaphore (one
+    // fence cannot be associated with both the acquire and the submit).
     std::uint32_t image_index = 0;
-    auto acquire = impl.swapchain->acquireNextImage(frame.image_available, frame.in_flight);
+    auto acquire = impl.swapchain->acquireNextImage(frame.image_available, VK_NULL_HANDLE);
     if (acquire.failed()) {
         if (acquire.error().code() == core::ErrorCode::Vulkan) {
             // OUT_OF_DATE: recreate and retry once.
@@ -278,7 +315,8 @@ bool Renderer::renderFrame() {
             SDL_Window* win = impl.window;
             int w = 0, h = 0;
             SDL_GetWindowSizeInPixels(win, &w, &h);
-            if (impl.swapchain->recreate(static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h)).failed()) {
+            if (impl.swapchain->recreate(static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h))
+                    .failed()) {
                 core::logError("swapchain recreation failed");
                 return false;
             }
@@ -304,8 +342,6 @@ bool Renderer::renderFrame() {
         return false;
     }
     image_index = acquire.value();
-
-    vkResetFences(impl.device->handle(), 1, &frame.in_flight);
 
     // Begin recording.
     VkCommandBufferBeginInfo begin{};
@@ -389,23 +425,41 @@ bool Renderer::renderFrame() {
     // Smoke scene (triangle + depth probes).
     impl.scene->record(frame.cmd, extent, static_cast<std::uint32_t>(impl.frame_count));
 
+    vkCmdEndRendering(frame.cmd);
+
 #ifdef HELIOS_ENABLE_IMGUI
     if (impl.imgui_enabled) {
-        // ImGui frame (CPU).
+        // ImGui needs its own pass WITHOUT a depth attachment: the current
+        // ImGui Vulkan backend only declares color formats (no depth).
+        VkRenderingAttachmentInfo imgui_color{};
+        imgui_color.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        imgui_color.imageView = impl.swapchain_image_views[image_index];
+        imgui_color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        imgui_color.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        imgui_color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+        VkRenderingInfo imgui_render{};
+        imgui_render.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        imgui_render.renderArea = {{0, 0}, extent};
+        imgui_render.layerCount = 1;
+        imgui_render.colorAttachmentCount = 1;
+        imgui_render.pColorAttachments = &imgui_color;
+
+        vkCmdBeginRendering(frame.cmd, &imgui_render);
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
         drawDebugUi();
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.cmd);
+        vkCmdEndRendering(frame.cmd);
     }
 #endif
 
-    vkCmdEndRendering(frame.cmd);
-
     // GPU timestamps: end.
     if (impl.timestamp_pool.handle() != VK_NULL_HANDLE) {
-        vkCmdWriteTimestamp2(frame.cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, impl.timestamp_pool.handle(), 1);
+        vkCmdWriteTimestamp2(frame.cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, impl.timestamp_pool.handle(),
+                             1);
     }
 
     // Color attachment -> present source.
@@ -439,7 +493,7 @@ bool Renderer::renderFrame() {
     wait_sem.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSemaphoreSubmitInfo signal_sem{};
     signal_sem.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signal_sem.semaphore = frame.render_finished;
+    signal_sem.semaphore = impl.render_finished[image_index];
     signal_sem.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     VkCommandBufferSubmitInfo cmd_info{};
     cmd_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
@@ -459,7 +513,7 @@ bool Renderer::renderFrame() {
     frame.submitted = true;
 
     // Present.
-    auto present = impl.swapchain->present(image_index, frame.render_finished);
+    auto present = impl.swapchain->present(image_index, impl.render_finished[image_index]);
     if (present.failed()) {
         core::logInfo("present failed; recreating swapchain");
         SDL_Window* win = impl.window;

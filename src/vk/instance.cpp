@@ -19,32 +19,39 @@ std::once_flag g_volk_flag;
 }
 
 std::string Instance::apiVersionString(std::uint32_t version) {
-    return std::to_string(VK_API_VERSION_MAJOR(version)) + "." + std::to_string(VK_API_VERSION_MINOR(version)) +
-           "." + std::to_string(VK_API_VERSION_PATCH(version));
+    return std::to_string(VK_API_VERSION_MAJOR(version)) + "." +
+           std::to_string(VK_API_VERSION_MINOR(version)) + "." +
+           std::to_string(VK_API_VERSION_PATCH(version));
 }
 
 namespace {
-VKAPI_ATTR VkBool32 VKAPI_CALL debugMessengerCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT /*type*/,
-    VkDebugUtilsMessengerCallbackDataEXT const* data, void* user_data) {
-    auto* state = static_cast<DebugMessengerState*>(user_data);
-    if (state == nullptr || data == nullptr || data->pMessage == nullptr) {
+VKAPI_ATTR VkBool32 VKAPI_CALL debugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                                                      VkDebugUtilsMessageTypeFlagsEXT /*type*/,
+                                                      VkDebugUtilsMessengerCallbackDataEXT const* data,
+                                                      void* user_data) {
+    // user_data points to Instance::validation_stats_ (owned by the
+    // Instance, which outlives the messenger). NEVER point this at freed
+    // memory: the validation layer may call the callback at any time.
+    auto* stats = static_cast<ValidationStats*>(user_data);
+    if (stats == nullptr || data == nullptr || data->pMessage == nullptr) {
         return VK_FALSE;
     }
     const std::string message(data->pMessage);
 
     if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        ++state->stats.error_count;
-        if (state->stats.last_errors.size() >= 32) state->stats.last_errors.pop_back();
-        state->stats.last_errors.insert(state->stats.last_errors.begin(), message);
+        ++stats->error_count;
+        if (stats->last_errors.size() >= 32)
+            stats->last_errors.pop_back();
+        stats->last_errors.insert(stats->last_errors.begin(), message);
         core::logError("Vulkan validation ERROR: {}", message);
     } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        ++state->stats.warning_count;
-        if (state->stats.last_warnings.size() >= 32) state->stats.last_warnings.pop_back();
-        state->stats.last_warnings.insert(state->stats.last_warnings.begin(), message);
+        ++stats->warning_count;
+        if (stats->last_warnings.size() >= 32)
+            stats->last_warnings.pop_back();
+        stats->last_warnings.insert(stats->last_warnings.begin(), message);
         core::logWarn("Vulkan validation WARNING: {}", message);
     } else {
-        ++state->stats.info_count;
+        ++stats->info_count;
         core::logDebug("Vulkan validation: {}", message);
     }
     return VK_FALSE;
@@ -116,7 +123,8 @@ core::Result<std::unique_ptr<Instance>> Instance::create(InstanceOptions const& 
             return core::makeError(core::ErrorCode::Unsupported,
                                    "VK_LAYER_KHRONOS_validation requested but not available");
         } else {
-            core::logWarn("Validation layer VK_LAYER_KHRONOS_validation not available; continuing without it");
+            core::logWarn(
+                "Validation layer VK_LAYER_KHRONOS_validation not available; continuing without it");
         }
     }
 
@@ -147,7 +155,6 @@ core::Result<std::unique_ptr<Instance>> Instance::create(InstanceOptions const& 
     volkLoadInstance(instance->instance_);
 
     if (instance->has_debug_utils_) {
-        auto* state = new DebugMessengerState();
         VkDebugUtilsMessengerCreateInfoEXT dbg{};
         dbg.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         dbg.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
@@ -157,16 +164,14 @@ core::Result<std::unique_ptr<Instance>> Instance::create(InstanceOptions const& 
                           VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                           VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         dbg.pfnUserCallback = debugMessengerCallback;
-        dbg.pUserData = state;
-        if (vkCreateDebugUtilsMessengerEXT(instance->instance_, &dbg, nullptr, &instance->messenger_) ==
-            VK_SUCCESS) {
-            instance->validation_stats_ = state->stats; // copy seed (empty)
-        }
-        delete state;
+        // Lifetime: validation_stats_ is owned by the Instance and lives
+        // until the messenger is destroyed in Instance::destroy().
+        dbg.pUserData = &instance->validation_stats_;
+        vkCreateDebugUtilsMessengerEXT(instance->instance_, &dbg, nullptr, &instance->messenger_);
     }
 
-    core::logInfo("Vulkan instance created (API {} requested, runtime {})", apiVersionString(app_info.apiVersion),
-                  apiVersionString(instance->instance_version_));
+    core::logInfo("Vulkan instance created (API {} requested, runtime {})",
+                  apiVersionString(app_info.apiVersion), apiVersionString(instance->instance_version_));
     return instance;
 }
 

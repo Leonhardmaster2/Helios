@@ -47,7 +47,8 @@ struct OrbitCamera {
 int runWindowed(CliOptions const& options) {
     core::logInfo("=== windowed smoke ===");
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+    // SDL3: SDL_Init returns true on success.
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         core::logError("SDL_Init failed: {}", SDL_GetError());
         return 2;
     }
@@ -140,7 +141,7 @@ int runWindowed(CliOptions const& options) {
     // Final evidence: performance summary.
     core::logInfo("rendered {} frames; closing", frame_count);
     const auto& stats = renderer->stats();
-    core::logInfo("CPU frame time: p50 {:.3f} ms, p95 {:.3f} ms, p99 {:.3f} ms, max {:.3f} ms", 
+    core::logInfo("CPU frame time: p50 {:.3f} ms, p95 {:.3f} ms, p99 {:.3f} ms, max {:.3f} ms",
                   stats.cpu_frame_ms.percentile(50.0), stats.cpu_frame_ms.percentile(95.0),
                   stats.cpu_frame_ms.percentile(99.0), stats.cpu_frame_ms.max());
     if (stats.gpu_frame_ms.count() > 0) {
@@ -155,22 +156,26 @@ int runWindowed(CliOptions const& options) {
         env.gpu_name = renderer->deviceName();
         assets::PerformanceReport performance;
         performance.environment = env;
-        performance.cpu_frame_ms = {stats.cpu_frame_ms.count(), stats.cpu_frame_ms.percentile(50.0) * 1000.0,
+        performance.cpu_frame_ms = {stats.cpu_frame_ms.count(),
+                                    stats.cpu_frame_ms.percentile(50.0) * 1000.0,
                                     stats.cpu_frame_ms.percentile(95.0) * 1000.0,
                                     stats.cpu_frame_ms.percentile(99.0) * 1000.0,
-                                    stats.cpu_frame_ms.max() * 1000.0, stats.cpu_frame_ms.min() * 1000.0,
+                                    stats.cpu_frame_ms.max() * 1000.0,
+                                    stats.cpu_frame_ms.min() * 1000.0,
                                     stats.cpu_frame_ms.average() * 1000.0};
-        performance.gpu_frame_ms = {stats.gpu_frame_ms.count(), stats.gpu_frame_ms.percentile(50.0) * 1000.0,
+        performance.gpu_frame_ms = {stats.gpu_frame_ms.count(),
+                                    stats.gpu_frame_ms.percentile(50.0) * 1000.0,
                                     stats.gpu_frame_ms.percentile(95.0) * 1000.0,
                                     stats.gpu_frame_ms.percentile(99.0) * 1000.0,
-                                    stats.gpu_frame_ms.max() * 1000.0, stats.gpu_frame_ms.min() * 1000.0,
+                                    stats.gpu_frame_ms.max() * 1000.0,
+                                    stats.gpu_frame_ms.min() * 1000.0,
                                     stats.gpu_frame_ms.average() * 1000.0};
         assets::EvidenceReport evidence;
         evidence.environment = env;
         evidence.validation_error_count = renderer->validationErrorCount();
         evidence.validation_warning_count = renderer->validationWarningCount();
-        auto write_result =
-            render::writeReports(options.report_dir, env, renderer->deviceReportJson(), performance, evidence);
+        auto write_result = render::writeReports(options.report_dir, env, renderer->deviceReportJson(),
+                                                 performance, evidence);
         if (write_result.failed()) {
             core::logError("report writing failed: {}", write_result.error().to_string());
         }

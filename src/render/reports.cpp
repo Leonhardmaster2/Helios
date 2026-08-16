@@ -96,7 +96,8 @@ std::string dependencyLockHash() {
         // The working directory may not be the repo root; try parent paths.
         for (auto const& p : {"../cmake/deps.lock.json", "../../cmake/deps.lock.json"}) {
             hash = core::sha256File(p);
-            if (hash.ok()) break;
+            if (hash.ok())
+                break;
         }
     }
     return hash.ok() ? hash.value() : "unavailable";
@@ -108,14 +109,15 @@ std::string readSlangVersion(std::string_view shader_dir) {
         return "unknown";
     }
     std::string line = text.value();
-    while (!line.empty() && (line.back() == '\n' || line.back() == '\r')) line.pop_back();
+    while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
+        line.pop_back();
     return line;
 }
 
 assets::EnvironmentInfo collectEnvironment(std::string_view resolution, bool validation_enabled) {
     assets::EnvironmentInfo env;
-    env.helios_version = std::format("{}.{}.{}", heliosVersion().major, heliosVersion().minor,
-                                     heliosVersion().patch);
+    env.helios_version =
+        std::format("{}.{}.{}", heliosVersion().major, heliosVersion().minor, heliosVersion().patch);
     env.helios_git_hash = std::string(heliosGitHash());
     env.build_type = HELIOS_BUILD_TYPE;
     env.compiler = compilerName();
@@ -134,7 +136,8 @@ assets::EnvironmentInfo collectEnvironment(std::string_view resolution, bool val
 }
 
 core::Result<void> writeReports(std::string_view report_dir, assets::EnvironmentInfo const& env,
-                                std::string const& device_report_json, assets::PerformanceReport const& performance,
+                                std::string const& device_report_json,
+                                assets::PerformanceReport const& performance,
                                 assets::EvidenceReport const& evidence) {
     std::error_code ec;
     fs::create_directories(std::string(report_dir), ec);
@@ -149,14 +152,18 @@ core::Result<void> writeReports(std::string_view report_dir, assets::Environment
     cap["environment"] = assets::environmentToJson(env);
     cap["device"] = nlohmann::json::parse(device_report_json);
 
-    auto r1 = assets::writeJsonReport((fs::path(std::string(report_dir)) / "capabilities.json").string(), cap);
+    auto r1 =
+        assets::writeJsonReport((fs::path(std::string(report_dir)) / "capabilities.json").string(), cap);
     auto r2 = assets::writeJsonReport((fs::path(std::string(report_dir)) / "performance.json").string(),
                                       assets::performanceReportToJson(performance));
     auto r3 = assets::writeJsonReport((fs::path(std::string(report_dir)) / "evidence.json").string(),
                                       assets::evidenceReportToJson(evidence));
-    if (r1.failed()) return r1.error();
-    if (r2.failed()) return r2.error();
-    if (r3.failed()) return r3.error();
+    if (r1.failed())
+        return r1.error();
+    if (r2.failed())
+        return r2.error();
+    if (r3.failed())
+        return r3.error();
     core::logInfo("Reports written to {}", report_dir);
     return core::Result<void>{};
 }

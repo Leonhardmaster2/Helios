@@ -20,8 +20,8 @@ namespace helios::vk {
 
 struct InstanceOptions {
     std::string app_name = "Helios";
-    bool enable_validation = true;      // request VK_LAYER_KHRONOS_validation
-    bool require_validation = false;    // fail startup when unavailable
+    bool enable_validation = true;                  // request VK_LAYER_KHRONOS_validation
+    bool require_validation = false;                // fail startup when unavailable
     std::uint32_t api_version = VK_API_VERSION_1_3; // requested instance API version
 };
 
@@ -30,12 +30,12 @@ struct ValidationStats {
     std::uint32_t error_count = 0;
     std::uint32_t warning_count = 0;
     std::uint32_t info_count = 0;
-    std::vector<std::string> last_errors;    // most recent first, bounded
-    std::vector<std::string> last_warnings;  // most recent first, bounded
+    std::vector<std::string> last_errors;   // most recent first, bounded
+    std::vector<std::string> last_warnings; // most recent first, bounded
 };
 
 class Instance {
-public:
+  public:
     ~Instance();
     Instance(Instance const&) = delete;
     Instance& operator=(Instance const&) = delete;
@@ -43,25 +43,37 @@ public:
     // Creates the instance (volk is initialized globally on first use).
     [[nodiscard]] static core::Result<std::unique_ptr<Instance>> create(InstanceOptions const& options);
 
-    [[nodiscard]] VkInstance handle() const noexcept { return instance_; }
-    [[nodiscard]] bool validationEnabled() const noexcept { return validation_enabled_; }
+    [[nodiscard]] VkInstance handle() const noexcept {
+        return instance_;
+    }
+    [[nodiscard]] bool validationEnabled() const noexcept {
+        return validation_enabled_;
+    }
 
     // Creates a presentation surface from an SDL3 window (vk owns it).
     [[nodiscard]] core::Result<VkSurfaceKHR> createSurface(SDL_Window* window);
 
     // Validation-layer statistics since instance creation.
-    [[nodiscard]] ValidationStats const& validationStats() const noexcept { return validation_stats_; }
+    [[nodiscard]] ValidationStats const& validationStats() const noexcept {
+        return validation_stats_;
+    }
 
     // Version of the Vulkan loader/runtime (vkEnumerateInstanceVersion).
-    [[nodiscard]] std::uint32_t instanceVersion() const noexcept { return instance_version_; }
+    [[nodiscard]] std::uint32_t instanceVersion() const noexcept {
+        return instance_version_;
+    }
 
     // Human-readable API version, e.g. "1.3.296".
     [[nodiscard]] static std::string apiVersionString(std::uint32_t version);
 
-    [[nodiscard]] std::vector<VkExtensionProperties> const& availableExtensions() const noexcept { return extensions_; }
-    [[nodiscard]] std::vector<VkLayerProperties> const& availableLayers() const noexcept { return layers_; }
+    [[nodiscard]] std::vector<VkExtensionProperties> const& availableExtensions() const noexcept {
+        return extensions_;
+    }
+    [[nodiscard]] std::vector<VkLayerProperties> const& availableLayers() const noexcept {
+        return layers_;
+    }
 
-private:
+  private:
     Instance() = default;
     void destroy();
 

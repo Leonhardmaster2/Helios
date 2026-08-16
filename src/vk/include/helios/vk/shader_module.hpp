@@ -12,24 +12,27 @@
 namespace helios::vk {
 
 class ShaderModule {
-public:
+  public:
     ShaderModule() = default;
     [[nodiscard]] static core::Result<ShaderModule> create(Device& device, std::string_view spv_path,
                                                            std::string_view debug_name);
     // Creates from in-memory SPIR-V (embedded shader data).
-    [[nodiscard]] static core::Result<ShaderModule> createFromSpirv(Device& device,
-                                                                    void const* data, std::size_t size,
-                                                                    std::string_view debug_name);
+    [[nodiscard]] static core::Result<ShaderModule>
+    createFromSpirv(Device& device, void const* data, std::size_t size, std::string_view debug_name);
     ShaderModule(ShaderModule&& other) noexcept;
     ShaderModule& operator=(ShaderModule&& other) noexcept;
     ShaderModule(ShaderModule const&) = delete;
     ShaderModule& operator=(ShaderModule const&) = delete;
     ~ShaderModule();
 
-    [[nodiscard]] VkShaderModule handle() const noexcept { return module_; }
-    [[nodiscard]] bool valid() const noexcept { return module_ != VK_NULL_HANDLE; }
+    [[nodiscard]] VkShaderModule handle() const noexcept {
+        return module_;
+    }
+    [[nodiscard]] bool valid() const noexcept {
+        return module_ != VK_NULL_HANDLE;
+    }
 
-private:
+  private:
     void destroy();
     Device* device_ = nullptr;
     VkShaderModule module_ = VK_NULL_HANDLE;

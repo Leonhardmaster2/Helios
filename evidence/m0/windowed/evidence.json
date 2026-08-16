@@ -1,0 +1,25 @@
+{
+  "environment": {
+    "build_type": "RelWithDebInfo",
+    "cmake_version": "4.2.0-rc2",
+    "compiler": "MSVC 194435228",
+    "cpu_name": "Intel64 Family 6 Model 198 Stepping 2, GenuineIntel",
+    "dependency_lock_hash": "5674d616472b52f4077978d1731ea26a5faca734e3103239b5e8b2bffbba0bba",
+    "driver_version": "queried-at-runtime",
+    "gpu_name": "NVIDIA GeForce RTX 5080",
+    "helios_git_hash": "05c6d7f3292b936a369e8b0089cccd8a1dd7e50e",
+    "helios_version": "0.1.0",
+    "os_name": "Windows 10.0 (build 26200)",
+    "quality_preset": "balanced",
+    "resolution": "1280x720",
+    "slang_version": "slangc C:/Users/leonh/Documents/Helios/.deps-cache/slang-windows-x64/bin/slangc.exe:\n2026.14.1",
+    "timestamp_utc": "2026-08-16T12:49:36Z",
+    "validation_layers": "enabled"
+  },
+  "format": "helios-evidence-report",
+  "notes": [],
+  "schema_version": 1,
+  "smoke_paths": [],
+  "validation_error_count": 0,
+  "validation_warning_count": 0
+}

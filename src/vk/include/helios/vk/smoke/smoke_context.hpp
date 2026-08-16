@@ -24,12 +24,13 @@ struct SmokeTargetSpec {
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     VkImageUsageFlags color_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                     VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    VkImageUsageFlags depth_usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageUsageFlags depth_usage =
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 };
 
 // Offscreen color+depth target with readback. Owns its images.
 class SmokeContext {
-public:
+  public:
     ~SmokeContext();
     SmokeContext(SmokeContext const&) = delete;
     SmokeContext& operator=(SmokeContext const&) = delete;
@@ -37,18 +38,32 @@ public:
     [[nodiscard]] static core::Result<std::unique_ptr<SmokeContext>> create(Device& device,
                                                                             SmokeTargetSpec const& spec);
 
-    [[nodiscard]] VkImageView colorView() const noexcept { return color_view_; }
-    [[nodiscard]] VkImageView depthView() const noexcept { return depth_view_; }
-    [[nodiscard]] VkExtent2D extent() const noexcept { return extent_; }
-    [[nodiscard]] VkFormat colorFormat() const noexcept { return color_format_; }
-    [[nodiscard]] VkFormat depthFormat() const noexcept { return depth_format_; }
-    [[nodiscard]] Image& colorImage() noexcept { return *color_; }
-    [[nodiscard]] Image& depthImage() noexcept { return *depth_; }
+    [[nodiscard]] VkImageView colorView() const noexcept {
+        return color_view_;
+    }
+    [[nodiscard]] VkImageView depthView() const noexcept {
+        return depth_view_;
+    }
+    [[nodiscard]] VkExtent2D extent() const noexcept {
+        return extent_;
+    }
+    [[nodiscard]] VkFormat colorFormat() const noexcept {
+        return color_format_;
+    }
+    [[nodiscard]] VkFormat depthFormat() const noexcept {
+        return depth_format_;
+    }
+    [[nodiscard]] Image& colorImage() noexcept {
+        return *color_;
+    }
+    [[nodiscard]] Image& depthImage() noexcept {
+        return *depth_;
+    }
 
     // Clears the color attachment to (0,0,0,0) via transfer.
     [[nodiscard]] core::Result<void> clearColor(std::array<float, 4> const& value) const;
 
-private:
+  private:
     SmokeContext() = default;
     void destroy();
 

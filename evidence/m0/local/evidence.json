@@ -1,0 +1,93 @@
+{
+  "environment": {
+    "build_type": "RelWithDebInfo",
+    "cmake_version": "4.2.0-rc2",
+    "compiler": "MSVC 194435228",
+    "cpu_name": "Intel64 Family 6 Model 198 Stepping 2, GenuineIntel",
+    "dependency_lock_hash": "5674d616472b52f4077978d1731ea26a5faca734e3103239b5e8b2bffbba0bba",
+    "driver_version": "610.74",
+    "gpu_name": "NVIDIA GeForce RTX 5080",
+    "helios_git_hash": "05c6d7f3292b936a369e8b0089cccd8a1dd7e50e",
+    "helios_version": "0.1.0",
+    "os_name": "Windows 10.0 (build 26200)",
+    "quality_preset": "balanced",
+    "resolution": "1280x720",
+    "slang_version": "slangc C:/Users/leonh/Documents/Helios/.deps-cache/slang-windows-x64/bin/slangc.exe:\n2026.14.1",
+    "timestamp_utc": "2026-08-16T12:49:47Z",
+    "validation_layers": "enabled"
+  },
+  "format": "helios-evidence-report",
+  "notes": [],
+  "schema_version": 1,
+  "smoke_paths": [
+    {
+      "detail": "all 921600 pixels match the clear color",
+      "metrics": {
+        "elapsed_ms": 21.5026,
+        "height": 720,
+        "pixels": 921600,
+        "width": 1280
+      },
+      "name": "clear",
+      "status": "pass"
+    },
+    {
+      "detail": "triangle rendered; center=#3f4080",
+      "metrics": {
+        "elapsed_ms": 1.4026,
+        "height": 720,
+        "width": 1280
+      },
+      "name": "triangle",
+      "status": "pass"
+    },
+    {
+      "detail": "depth values far=0.150 mid=0.500 near=0.900, near-wins=true, center=#0000ff",
+      "metrics": {
+        "depth_far": 0.15000000596046448,
+        "depth_mid": 0.5,
+        "depth_near": 0.8999999761581421,
+        "elapsed_ms": 0.4922,
+        "reversed_z_ordered": true
+      },
+      "name": "depth",
+      "status": "pass"
+    },
+    {
+      "detail": "4096 elements verified bit-exact against CPU reference",
+      "metrics": {
+        "elapsed_ms": 0.7622,
+        "elements": 4096,
+        "mismatches": 0
+      },
+      "name": "compute",
+      "status": "pass"
+    },
+    {
+      "detail": "buffer copy: 8192 elements, 0 mismatches; image upload: 16384 bytes, match=true",
+      "metrics": {
+        "buffer_copy_ms": 0.3112,
+        "elements": 8192,
+        "image_bytes": 16384,
+        "image_match": true,
+        "image_upload_ms": 0.8339
+      },
+      "name": "transfer-upload",
+      "status": "pass"
+    },
+    {
+      "detail": "GPU dispatch: 0.0044 ms (timestamp period 1 ns)",
+      "metrics": {
+        "begin_ticks": 1786884587930232512,
+        "elapsed_ms": 0.2805,
+        "end_ticks": 1786884587930236832,
+        "gpu_dispatch_ms": 0.004352,
+        "timestamp_period_ns": 1.0
+      },
+      "name": "timestamp",
+      "status": "pass"
+    }
+  ],
+  "validation_error_count": 0,
+  "validation_warning_count": 0
+}

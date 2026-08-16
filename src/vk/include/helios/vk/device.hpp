@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
-#include <vulkan/vulkan.h>
 #include <nlohmann/json.hpp>
+#include <vulkan/vulkan.h>
 
 // Opaque VMA allocator handle (keeps vk_mem_alloc.h private to helios_vk).
 struct VmaAllocator_T;
@@ -33,7 +33,7 @@ enum class DepthFormatChoice : std::uint8_t {
 };
 
 struct DeviceOptions {
-    bool require_swapchain = true;   // false for headless
+    bool require_swapchain = true; // false for headless
     bool require_validation_features = false;
     DepthFormatChoice depth_format = DepthFormatChoice::D32Sfloat;
     // If set, only devices with apiVersion >= this are considered.
@@ -71,6 +71,7 @@ struct DeviceReport {
     std::vector<QueueFamilyInfo> queue_families;
     std::uint32_t used_queue_family = 0;
     // Required/queried features (1 = available&enabled, 0 = unavailable)
+    bool shader_draw_parameters = false;
     bool dynamic_rendering = false;
     bool synchronization2 = false;
     bool timeline_semaphore = false;
@@ -123,29 +124,47 @@ struct DeviceReport {
 [[nodiscard]] nlohmann::json deviceReportToJson(DeviceReport const& report);
 
 class Device {
-public:
+  public:
     ~Device();
     Device(Device const&) = delete;
     Device& operator=(Device const&) = delete;
 
     // Enumerates physical devices, scores them, verifies required features
     // and creates the logical device with the selected features enabled.
-    [[nodiscard]] static core::Result<std::unique_ptr<Device>> create(
-        Instance& instance, std::optional<VkSurfaceKHR> surface, DeviceOptions const& options);
+    [[nodiscard]] static core::Result<std::unique_ptr<Device>>
+    create(Instance& instance, std::optional<VkSurfaceKHR> surface, DeviceOptions const& options);
 
-    [[nodiscard]] VkDevice handle() const noexcept { return device_; }
-    [[nodiscard]] VkPhysicalDevice physicalDevice() const noexcept { return physical_; }
-    [[nodiscard]] Instance& instance() const noexcept { return *instance_; }
-    [[nodiscard]] DeviceReport const& report() const noexcept { return report_; }
+    [[nodiscard]] VkDevice handle() const noexcept {
+        return device_;
+    }
+    [[nodiscard]] VkPhysicalDevice physicalDevice() const noexcept {
+        return physical_;
+    }
+    [[nodiscard]] Instance& instance() const noexcept {
+        return *instance_;
+    }
+    [[nodiscard]] DeviceReport const& report() const noexcept {
+        return report_;
+    }
 
     // Serialized device facts (used by capability report assembly).
     [[nodiscard]] nlohmann::json reportJson() const;
 
-    [[nodiscard]] VkQueue graphicsQueue() const noexcept { return graphics_queue_; }
-    [[nodiscard]] std::uint32_t graphicsQueueFamily() const noexcept { return queue_family_; }
-    [[nodiscard]] bool hasSeparateComputeQueue() const noexcept { return compute_queue_ != VK_NULL_HANDLE; }
-    [[nodiscard]] VkQueue computeQueue() const noexcept { return compute_queue_; }
-    [[nodiscard]] VkQueue transferQueue() const noexcept { return transfer_queue_; }
+    [[nodiscard]] VkQueue graphicsQueue() const noexcept {
+        return graphics_queue_;
+    }
+    [[nodiscard]] std::uint32_t graphicsQueueFamily() const noexcept {
+        return queue_family_;
+    }
+    [[nodiscard]] bool hasSeparateComputeQueue() const noexcept {
+        return compute_queue_ != VK_NULL_HANDLE;
+    }
+    [[nodiscard]] VkQueue computeQueue() const noexcept {
+        return compute_queue_;
+    }
+    [[nodiscard]] VkQueue transferQueue() const noexcept {
+        return transfer_queue_;
+    }
 
     // Waits until the device is idle (debug/teardown use only).
     void waitIdle() const;
@@ -153,14 +172,18 @@ public:
     // vkSetDebugUtilsObjectNameEXT wrapper (no-op when extension absent).
     void setDebugName(VkObjectType type, std::uint64_t handle, std::string_view name) const;
 
-    [[nodiscard]] VmaAllocator allocator() const noexcept { return allocator_; }
+    [[nodiscard]] VmaAllocator allocator() const noexcept {
+        return allocator_;
+    }
 
     // Loads SPIR-V bytes from disk into a shader module (caller destroys).
     [[nodiscard]] core::Result<VkShaderModule> loadShaderModule(std::string_view spv_path) const;
 
-    [[nodiscard]] float timestampPeriodNanos() const noexcept { return report_.timestamp_period_ns; }
+    [[nodiscard]] float timestampPeriodNanos() const noexcept {
+        return report_.timestamp_period_ns;
+    }
 
-private:
+  private:
     Device() = default;
     void destroy();
 

@@ -14,7 +14,8 @@
 namespace helios::render {
 
 // Collects the environment/scenario manifest (compiler, OS, GPU, versions).
-[[nodiscard]] assets::EnvironmentInfo collectEnvironment(std::string_view resolution, bool validation_enabled);
+[[nodiscard]] assets::EnvironmentInfo collectEnvironment(std::string_view resolution,
+                                                         bool validation_enabled);
 
 // SHA-256 of cmake/deps.lock.json (dependency lock hash for the manifest).
 [[nodiscard]] std::string dependencyLockHash();
@@ -22,9 +23,10 @@ namespace helios::render {
 // Writes capabilities.json, performance.json and smoke-results.json +
 // evidence.json under report_dir (created if missing). Returns the number
 // of failed smoke paths (0 = all pass) via out_failures.
-[[nodiscard]] core::Result<void> writeReports(
-    std::string_view report_dir, assets::EnvironmentInfo const& env, std::string const& device_report_json,
-    assets::PerformanceReport const& performance, assets::EvidenceReport const& evidence);
+[[nodiscard]] core::Result<void> writeReports(std::string_view report_dir, assets::EnvironmentInfo const& env,
+                                              std::string const& device_report_json,
+                                              assets::PerformanceReport const& performance,
+                                              assets::EvidenceReport const& evidence);
 
 // Reads slangc-version.txt from the shader dir (best effort).
 [[nodiscard]] std::string readSlangVersion(std::string_view shader_dir);

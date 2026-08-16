@@ -6,8 +6,9 @@
 
 namespace helios::vk {
 
-core::Result<DescriptorSetLayout> DescriptorSetLayout::create(
-    Device& device, std::vector<VkDescriptorSetLayoutBinding> const& bindings, std::string_view debug_name) {
+core::Result<DescriptorSetLayout>
+DescriptorSetLayout::create(Device& device, std::vector<VkDescriptorSetLayoutBinding> const& bindings,
+                            std::string_view debug_name) {
     VkDescriptorSetLayoutCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     info.bindingCount = static_cast<std::uint32_t>(bindings.size());
@@ -19,7 +20,8 @@ core::Result<DescriptorSetLayout> DescriptorSetLayout::create(
         return core::makeError(core::ErrorCode::Vulkan,
                                "vkCreateDescriptorSetLayout failed: " + std::to_string(static_cast<int>(r)));
     }
-    device.setDebugName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<std::uint64_t>(layout), debug_name);
+    device.setDebugName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<std::uint64_t>(layout),
+                        debug_name);
 
     DescriptorSetLayout out;
     out.device_ = &device;
@@ -53,7 +55,8 @@ DescriptorSetLayout::~DescriptorSetLayout() {
     destroy();
 }
 
-core::Result<DescriptorPool> DescriptorPool::create(Device& device, std::vector<VkDescriptorPoolSize> const& sizes,
+core::Result<DescriptorPool> DescriptorPool::create(Device& device,
+                                                    std::vector<VkDescriptorPoolSize> const& sizes,
                                                     std::uint32_t max_sets, std::string_view debug_name) {
     VkDescriptorPoolCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

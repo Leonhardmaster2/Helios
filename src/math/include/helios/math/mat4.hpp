@@ -16,8 +16,12 @@ struct Mat4f {
         return r;
     }
 
-    constexpr float& operator()(std::size_t col, std::size_t row) { return m[col][row]; }
-    constexpr float const& operator()(std::size_t col, std::size_t row) const { return m[col][row]; }
+    constexpr float& operator()(std::size_t col, std::size_t row) {
+        return m[col][row];
+    }
+    constexpr float const& operator()(std::size_t col, std::size_t row) const {
+        return m[col][row];
+    }
 };
 
 constexpr Mat4f operator*(Mat4f const& a, Mat4f const& b) {
@@ -25,7 +29,8 @@ constexpr Mat4f operator*(Mat4f const& a, Mat4f const& b) {
     for (std::size_t c = 0; c < 4; ++c) {
         for (std::size_t row = 0; row < 4; ++row) {
             float s = 0.0f;
-            for (std::size_t k = 0; k < 4; ++k) s += a.m[k][row] * b.m[c][k];
+            for (std::size_t k = 0; k < 4; ++k)
+                s += a.m[k][row] * b.m[c][k];
             r.m[c][row] = s;
         }
     }
@@ -36,7 +41,8 @@ constexpr Vec4f operator*(Mat4f const& mat, Vec4f const& v) {
     Vec4f r{};
     for (std::size_t row = 0; row < 4; ++row) {
         float s = 0.0f;
-        for (std::size_t c = 0; c < 4; ++c) s += mat.m[c][row] * v.v[c];
+        for (std::size_t c = 0; c < 4; ++c)
+            s += mat.m[c][row] * v.v[c];
         r.v[row] = s;
     }
     return r;
@@ -45,7 +51,8 @@ constexpr Vec4f operator*(Mat4f const& mat, Vec4f const& v) {
 constexpr Mat4f transpose(Mat4f const& a) {
     Mat4f r{};
     for (std::size_t c = 0; c < 4; ++c)
-        for (std::size_t row = 0; row < 4; ++row) r.m[c][row] = a.m[row][c];
+        for (std::size_t row = 0; row < 4; ++row)
+            r.m[c][row] = a.m[row][c];
     return r;
 }
 

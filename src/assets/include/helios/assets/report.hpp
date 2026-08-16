@@ -20,10 +20,10 @@ namespace helios::assets {
 
 // ---- environment/scenario manifest (common to all reports) ----------------
 struct EnvironmentInfo {
-    std::string helios_version;       // e.g. "0.1.0"
-    std::string helios_git_hash;      // build commit
-    std::string build_type;           // Debug/RelWithDebInfo/Release
-    std::string compiler;             // "MSVC 19.44.35228", "GCC 13.2", ...
+    std::string helios_version;  // e.g. "0.1.0"
+    std::string helios_git_hash; // build commit
+    std::string build_type;      // Debug/RelWithDebInfo/Release
+    std::string compiler;        // "MSVC 19.44.35228", "GCC 13.2", ...
     std::string cmake_version;
     std::string slang_version;        // pinned slangc version string
     std::string os_name;              // "Windows 11 build 26200", ...
@@ -62,19 +62,19 @@ struct FramePercentiles {
 struct PerformanceReport {
     std::uint32_t schema_version = kSchemaVersionPerformanceReport;
     EnvironmentInfo environment;
-    FramePercentiles cpu_frame_ms;         // CPU time per presented frame
-    FramePercentiles gpu_frame_ms;         // GPU time from timestamp queries
-    nlohmann::json extras;                 // per-path timings (upload/compute/...)
+    FramePercentiles cpu_frame_ms; // CPU time per presented frame
+    FramePercentiles gpu_frame_ms; // GPU time from timestamp queries
+    nlohmann::json extras;         // per-path timings (upload/compute/...)
 };
 
 [[nodiscard]] nlohmann::json performanceReportToJson(PerformanceReport const& report);
 
 // ---- evidence report ------------------------------------------------------
 struct SmokePathResult {
-    std::string name;        // e.g. "triangle"
-    std::string status;      // "pass" | "fail" | "skipped"
-    std::string detail;      // human-readable evidence summary
-    nlohmann::json metrics;  // machine-readable measurements
+    std::string name;       // e.g. "triangle"
+    std::string status;     // "pass" | "fail" | "skipped"
+    std::string detail;     // human-readable evidence summary
+    nlohmann::json metrics; // machine-readable measurements
 };
 
 struct EvidenceReport {

@@ -23,7 +23,8 @@ Clock::time_point Clock::now() noexcept {
     const long long nanos = (counter.QuadPart * 1000000000LL) / frequency;
     return time_point(duration(nanos));
 #else
-    return time_point(std::chrono::duration_cast<duration>(std::chrono::steady_clock::now().time_since_epoch()));
+    return time_point(
+        std::chrono::duration_cast<duration>(std::chrono::steady_clock::now().time_since_epoch()));
 #endif
 }
 
@@ -39,17 +40,20 @@ double FrameStats::percentile(double pct) const {
 }
 
 double FrameStats::min() const {
-    if (count_ == 0) return 0.0;
+    if (count_ == 0)
+        return 0.0;
     return *std::min_element(samples_.begin(), samples_.begin() + static_cast<std::ptrdiff_t>(count_));
 }
 
 double FrameStats::max() const {
-    if (count_ == 0) return 0.0;
+    if (count_ == 0)
+        return 0.0;
     return *std::max_element(samples_.begin(), samples_.begin() + static_cast<std::ptrdiff_t>(count_));
 }
 
 double FrameStats::average() const {
-    if (count_ == 0) return 0.0;
+    if (count_ == 0)
+        return 0.0;
     return sum_ / static_cast<double>(count_);
 }
 

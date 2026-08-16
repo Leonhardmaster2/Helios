@@ -10,8 +10,8 @@
 namespace helios::vk::smoke {
 
 namespace {
-core::Result<VkImageView> createView(Device& device, VkImage image, VkFormat format, VkImageAspectFlags aspect,
-                                     std::string_view name) {
+core::Result<VkImageView> createView(Device& device, VkImage image, VkFormat format,
+                                     VkImageAspectFlags aspect, std::string_view name) {
     VkImageViewCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     info.image = image;
@@ -29,36 +29,44 @@ core::Result<VkImageView> createView(Device& device, VkImage image, VkFormat for
 }
 } // namespace
 
-core::Result<std::unique_ptr<SmokeContext>> SmokeContext::create(Device& device, SmokeTargetSpec const& spec) {
+core::Result<std::unique_ptr<SmokeContext>> SmokeContext::create(Device& device,
+                                                                 SmokeTargetSpec const& spec) {
     auto ctx = std::unique_ptr<SmokeContext>(new SmokeContext());
     ctx->device_ = &device;
     ctx->extent_ = {spec.width, spec.height};
     ctx->color_format_ = spec.color_format;
     ctx->depth_format_ = spec.depth_format;
 
-    auto color = Image::create(device, ctx->extent_, spec.color_format, spec.color_usage, false, "smoke-color");
-    if (color.failed()) return color.error();
+    auto color =
+        Image::create(device, ctx->extent_, spec.color_format, spec.color_usage, false, "smoke-color");
+    if (color.failed())
+        return color.error();
     ctx->color_ = std::make_unique<Image>(std::move(color.value()));
 
-    auto depth = Image::create(device, ctx->extent_, spec.depth_format, spec.depth_usage, false, "smoke-depth");
-    if (depth.failed()) return depth.error();
+    auto depth =
+        Image::create(device, ctx->extent_, spec.depth_format, spec.depth_usage, false, "smoke-depth");
+    if (depth.failed())
+        return depth.error();
     ctx->depth_ = std::make_unique<Image>(std::move(depth.value()));
 
     auto color_view = createView(device, ctx->color_->handle(), spec.color_format, VK_IMAGE_ASPECT_COLOR_BIT,
                                  "smoke-color-view");
-    if (color_view.failed()) return color_view.error();
+    if (color_view.failed())
+        return color_view.error();
     ctx->color_view_ = color_view.value();
 
     auto depth_view = createView(device, ctx->depth_->handle(), spec.depth_format, VK_IMAGE_ASPECT_DEPTH_BIT,
                                  "smoke-depth-view");
-    if (depth_view.failed()) return depth_view.error();
+    if (depth_view.failed())
+        return depth_view.error();
     ctx->depth_view_ = depth_view.value();
 
     return ctx;
 }
 
 void SmokeContext::destroy() {
-    if (device_ == nullptr) return;
+    if (device_ == nullptr)
+        return;
     if (color_view_ != VK_NULL_HANDLE) {
         vkDestroyImageView(device_->handle(), color_view_, nullptr);
         color_view_ = VK_NULL_HANDLE;

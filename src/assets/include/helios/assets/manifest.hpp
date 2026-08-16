@@ -19,26 +19,32 @@
 namespace helios::assets {
 
 struct ManifestEntry {
-    std::string path;      // relative path within the manifest scope
-    std::string sha256;    // lowercase hex, 64 chars
+    std::string path;   // relative path within the manifest scope
+    std::string sha256; // lowercase hex, 64 chars
     std::uint64_t size_bytes = 0;
     DataClass data_class = DataClass::ModelDerived;
-    std::string role;      // e.g. "compiled-shader", "terrain-tile"
+    std::string role;                     // e.g. "compiled-shader", "terrain-tile"
     std::optional<std::string> generator; // tool/version that produced it
 };
 
 class AssetManifest {
-public:
+  public:
     static constexpr std::uint32_t kCurrentVersion = kSchemaVersionAssetManifest;
 
-    [[nodiscard]] std::uint32_t schemaVersion() const noexcept { return version_; }
-    void setSchemaVersion(std::uint32_t v) noexcept { version_ = v; }
+    [[nodiscard]] std::uint32_t schemaVersion() const noexcept {
+        return version_;
+    }
+    void setSchemaVersion(std::uint32_t v) noexcept {
+        version_ = v;
+    }
 
     // Generic provenance note for the manifest scope (e.g. dataset DOI).
     std::string scope_note;
 
     void addEntry(ManifestEntry entry);
-    [[nodiscard]] std::vector<ManifestEntry> const& entries() const noexcept { return entries_; }
+    [[nodiscard]] std::vector<ManifestEntry> const& entries() const noexcept {
+        return entries_;
+    }
 
     // Serialize to JSON (indented, stable key order).
     [[nodiscard]] nlohmann::json toJson() const;
@@ -53,7 +59,7 @@ public:
     // Returns the list of mismatched entries (empty == all match).
     [[nodiscard]] std::vector<std::string> verifyAgainst(std::string_view base_dir) const;
 
-private:
+  private:
     std::uint32_t version_ = kCurrentVersion;
     std::vector<ManifestEntry> entries_;
 };

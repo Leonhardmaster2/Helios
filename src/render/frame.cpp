@@ -34,15 +34,12 @@ core::Result<FrameContext> createFrameContext(helios::vk::Device& device, std::s
 
     VkSemaphoreCreateInfo sem_info{};
     sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    if (vkCreateSemaphore(device.handle(), &sem_info, nullptr, &frame.image_available) != VK_SUCCESS ||
-        vkCreateSemaphore(device.handle(), &sem_info, nullptr, &frame.render_finished) != VK_SUCCESS) {
+    if (vkCreateSemaphore(device.handle(), &sem_info, nullptr, &frame.image_available) != VK_SUCCESS) {
         vkDestroyCommandPool(device.handle(), frame.pool, nullptr);
         return core::makeError(core::ErrorCode::Vulkan, "semaphore creation failed");
     }
     device.setDebugName(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<std::uint64_t>(frame.image_available),
                         prefix + "-image-available");
-    device.setDebugName(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<std::uint64_t>(frame.render_finished),
-                        prefix + "-render-finished");
 
     VkFenceCreateInfo fence_info{};
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -64,10 +61,6 @@ void destroyFrameContext(helios::vk::Device& device, FrameContext& frame) {
     if (frame.image_available != VK_NULL_HANDLE) {
         vkDestroySemaphore(device.handle(), frame.image_available, nullptr);
         frame.image_available = VK_NULL_HANDLE;
-    }
-    if (frame.render_finished != VK_NULL_HANDLE) {
-        vkDestroySemaphore(device.handle(), frame.render_finished, nullptr);
-        frame.render_finished = VK_NULL_HANDLE;
     }
     if (frame.in_flight != VK_NULL_HANDLE) {
         vkDestroyFence(device.handle(), frame.in_flight, nullptr);

@@ -38,7 +38,8 @@ TEST_CASE("manifest round trip") {
     REQUIRE(parsed.ok());
     CHECK(parsed.value().entries().size() == 1);
     CHECK(parsed.value().entries()[0].path == "shaders/triangle.spv");
-    CHECK(static_cast<int>(parsed.value().entries()[0].data_class) == static_cast<int>(DataClass::ModelDerived));
+    CHECK(static_cast<int>(parsed.value().entries()[0].data_class) ==
+          static_cast<int>(DataClass::ModelDerived));
     CHECK(parsed.value().find("shaders/triangle.spv").has_value());
     CHECK_FALSE(parsed.value().find("nope").has_value());
 
@@ -55,7 +56,8 @@ TEST_CASE("manifest round trip") {
 
 TEST_CASE("manifest rejects malformed input") {
     // bad magic
-    auto bad_magic = AssetManifest::fromJson(nlohmann::json{{"format", "nope"}, {"schema_version", 1}, {"entries", {}}});
+    auto bad_magic =
+        AssetManifest::fromJson(nlohmann::json{{"format", "nope"}, {"schema_version", 1}, {"entries", {}}});
     CHECK(bad_magic.failed());
     CHECK(static_cast<int>(bad_magic.error().code()) == static_cast<int>(core::ErrorCode::CorruptData));
     // future schema version
@@ -69,13 +71,20 @@ TEST_CASE("manifest rejects malformed input") {
     CHECK(no_entries.failed());
     // bad hash length
     auto bad_hash = AssetManifest::fromJson(nlohmann::json{
-        {"format", kFormatAssetManifest}, {"schema_version", 1},
-        {"entries", {{"path", "x"}, {"sha256", "short"}, {"size_bytes", 1}, {"class", "measured"}, {"role", "r"}}}});
+        {"format", kFormatAssetManifest},
+        {"schema_version", 1},
+        {"entries",
+         {{"path", "x"}, {"sha256", "short"}, {"size_bytes", 1}, {"class", "measured"}, {"role", "r"}}}});
     CHECK(bad_hash.failed());
     // unknown class
-    auto bad_class = AssetManifest::fromJson(nlohmann::json{
-        {"format", kFormatAssetManifest}, {"schema_version", 1},
-        {"entries", {{"path", "x"}, {"sha256", std::string(64, 'a')}, {"size_bytes", 1}, {"class", "magic"}, {"role", "r"}}}});
+    auto bad_class = AssetManifest::fromJson(nlohmann::json{{"format", kFormatAssetManifest},
+                                                            {"schema_version", 1},
+                                                            {"entries",
+                                                             {{"path", "x"},
+                                                              {"sha256", std::string(64, 'a')},
+                                                              {"size_bytes", 1},
+                                                              {"class", "magic"},
+                                                              {"role", "r"}}}});
     CHECK(bad_class.failed());
     // overflow guard: entries count limit
     {

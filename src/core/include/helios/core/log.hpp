@@ -26,7 +26,7 @@ enum class LogLevel : int {
 [[nodiscard]] std::string_view toString(LogLevel level) noexcept;
 
 class Log {
-public:
+  public:
     // Global logger. Never null.
     static Log& instance();
 
@@ -42,12 +42,15 @@ public:
     // Optional file sink (appended). Returns error on failure.
     void setLogFile(std::string_view path);
 
-    void log(LogLevel level, std::string_view message, std::source_location loc = std::source_location::current());
+    void log(LogLevel level, std::string_view message,
+             std::source_location loc = std::source_location::current());
 
     // Convenience: enable ANSI colors on Windows console.
-    void setUseColor(bool use) noexcept { use_color_ = use; }
+    void setUseColor(bool use) noexcept {
+        use_color_ = use;
+    }
 
-private:
+  private:
     mutable std::mutex mutex_;
     LogLevel level_ = LogLevel::Info;
     bool use_color_ = true;
@@ -56,8 +59,7 @@ private:
 
 // --- free functions --------------------------------------------------------
 
-template <typename... Args>
-void logTrace(std::format_string<Args...> fmt, Args&&... args) {
+template <typename... Args> void logTrace(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Trace) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
@@ -66,8 +68,7 @@ void logTrace(std::format_string<Args...> fmt, Args&&... args) {
     }
 }
 
-template <typename... Args>
-void logDebug(std::format_string<Args...> fmt, Args&&... args) {
+template <typename... Args> void logDebug(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Debug) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
@@ -76,8 +77,7 @@ void logDebug(std::format_string<Args...> fmt, Args&&... args) {
     }
 }
 
-template <typename... Args>
-void logInfo(std::format_string<Args...> fmt, Args&&... args) {
+template <typename... Args> void logInfo(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Info) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
@@ -86,8 +86,7 @@ void logInfo(std::format_string<Args...> fmt, Args&&... args) {
     }
 }
 
-template <typename... Args>
-void logWarn(std::format_string<Args...> fmt, Args&&... args) {
+template <typename... Args> void logWarn(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Warn) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {
@@ -96,8 +95,7 @@ void logWarn(std::format_string<Args...> fmt, Args&&... args) {
     }
 }
 
-template <typename... Args>
-void logError(std::format_string<Args...> fmt, Args&&... args) {
+template <typename... Args> void logError(std::format_string<Args...> fmt, Args&&... args) {
     if constexpr (static_cast<int>(LogLevel::Error) >= static_cast<int>(LogLevel::Off)) {
         (void)fmt;
     } else {

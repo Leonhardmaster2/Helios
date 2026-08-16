@@ -16,7 +16,7 @@
 namespace helios::core {
 
 class Config {
-public:
+  public:
     // Build config from defaults, an optional JSON file, then CLI overrides.
     // CLI syntax: --key=value or --key value (both supported); booleans accept
     // true/false/1/0.
@@ -34,11 +34,15 @@ public:
     void set(std::string key, nlohmann::json value);
 
     // Keys explicitly provided on the command line (for evidence reporting).
-    [[nodiscard]] std::vector<std::string> const& cliKeys() const noexcept { return cli_keys_; }
+    [[nodiscard]] std::vector<std::string> const& cliKeys() const noexcept {
+        return cli_keys_;
+    }
 
-    [[nodiscard]] nlohmann::json const& raw() const noexcept { return values_; }
+    [[nodiscard]] nlohmann::json const& raw() const noexcept {
+        return values_;
+    }
 
-private:
+  private:
     nlohmann::json values_ = nlohmann::json::object();
     std::vector<std::string> cli_keys_;
 };

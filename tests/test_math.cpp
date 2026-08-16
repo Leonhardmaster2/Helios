@@ -43,8 +43,8 @@ TEST_CASE("reversed-Z infinite perspective properties (D-002)") {
         const Vec4f p = proj * Vec4f{0, 0, z_view, 1};
         return p.v[2] / p.v[3];
     };
-    CHECK(project(-0.1f) == doctest::Approx(1.0f).epsilon(1e-5));  // near plane
-    CHECK(project(-1.0f) == doctest::Approx(0.1f).epsilon(1e-5));  // 1 m
+    CHECK(project(-0.1f) == doctest::Approx(1.0f).epsilon(1e-5)); // near plane
+    CHECK(project(-1.0f) == doctest::Approx(0.1f).epsilon(1e-5)); // 1 m
     CHECK(project(-1000.0f) == doctest::Approx(0.0001f).epsilon(1e-6));
     CHECK(project(-1e9f) > 0.0f); // asymptotic to 0, never negative
     // Monotonic: closer objects (more negative z) must have larger NDC z.

@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (c) 2026 the Helios authors and contributors
 // VMA_IMPLEMENTATION must be defined before any vk_mem_alloc.h include
-// in this TU; the header is not include-guarded.
+// in this TU; the header is not include-guarded. With volk (function
+// pointers, VK_NO_PROTOTYPES) VMA must use dynamic function loading and
+// see volk.h before vk_mem_alloc.h (VMA documentation, "Usage with volk").
 #define VMA_IMPLEMENTATION
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#include <volk.h>
 #include "helios/vk/vma_allocator.hpp"
 
 #include "helios/core/log.hpp"

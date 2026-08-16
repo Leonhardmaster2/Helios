@@ -6,9 +6,8 @@
 
 namespace helios::vk {
 
-core::Result<ShaderModule> ShaderModule::createFromSpirv(Device& device, void const* data,
-                                                               std::size_t size,
-                                                               std::string_view debug_name) {
+core::Result<ShaderModule> ShaderModule::createFromSpirv(Device& device, void const* data, std::size_t size,
+                                                         std::string_view debug_name) {
     if (data == nullptr || size < 4 || size % 4 != 0) {
         return core::makeError(core::ErrorCode::InvalidArgument, "invalid embedded SPIR-V");
     }
@@ -38,7 +37,8 @@ core::Result<ShaderModule> ShaderModule::create(Device& device, std::string_view
     ShaderModule out;
     out.device_ = &device;
     out.module_ = module.value();
-    device.setDebugName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<std::uint64_t>(out.module_), debug_name);
+    device.setDebugName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<std::uint64_t>(out.module_),
+                        debug_name);
     return out;
 }
 

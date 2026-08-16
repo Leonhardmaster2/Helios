@@ -30,39 +30,45 @@ struct GraphicsPipelineDescription {
 };
 
 class Pipeline {
-public:
+  public:
     Pipeline() = default;
-    [[nodiscard]] static core::Result<Pipeline> create(Device& device, GraphicsPipelineDescription const& desc);
+    [[nodiscard]] static core::Result<Pipeline> create(Device& device,
+                                                       GraphicsPipelineDescription const& desc);
     Pipeline(Pipeline&& other) noexcept;
     Pipeline& operator=(Pipeline&& other) noexcept;
     Pipeline(Pipeline const&) = delete;
     Pipeline& operator=(Pipeline const&) = delete;
     ~Pipeline();
 
-    [[nodiscard]] VkPipeline handle() const noexcept { return pipeline_; }
-    [[nodiscard]] bool valid() const noexcept { return pipeline_ != VK_NULL_HANDLE; }
+    [[nodiscard]] VkPipeline handle() const noexcept {
+        return pipeline_;
+    }
+    [[nodiscard]] bool valid() const noexcept {
+        return pipeline_ != VK_NULL_HANDLE;
+    }
 
-private:
+  private:
     void destroy();
     Device* device_ = nullptr;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
 class ComputePipeline {
-public:
+  public:
     ComputePipeline() = default;
-    [[nodiscard]] static core::Result<ComputePipeline> create(Device& device, VkShaderModule shader,
-                                                              VkPipelineLayout layout,
-                                                              std::string_view debug_name);
+    [[nodiscard]] static core::Result<ComputePipeline>
+    create(Device& device, VkShaderModule shader, VkPipelineLayout layout, std::string_view debug_name);
     ComputePipeline(ComputePipeline&& other) noexcept;
     ComputePipeline& operator=(ComputePipeline&& other) noexcept;
     ComputePipeline(ComputePipeline const&) = delete;
     ComputePipeline& operator=(ComputePipeline const&) = delete;
     ~ComputePipeline();
 
-    [[nodiscard]] VkPipeline handle() const noexcept { return pipeline_; }
+    [[nodiscard]] VkPipeline handle() const noexcept {
+        return pipeline_;
+    }
 
-private:
+  private:
     void destroy();
     Device* device_ = nullptr;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
@@ -70,7 +76,7 @@ private:
 
 // Persistent pipeline cache (device/driver scoped; invalidated by Vulkan IDs).
 class PipelineCache {
-public:
+  public:
     PipelineCache() = default;
     [[nodiscard]] static core::Result<PipelineCache> create(Device& device, std::string_view cache_file);
     PipelineCache(PipelineCache&& other) noexcept;
@@ -79,11 +85,13 @@ public:
     PipelineCache& operator=(PipelineCache const&) = delete;
     ~PipelineCache();
 
-    [[nodiscard]] VkPipelineCache handle() const noexcept { return cache_; }
+    [[nodiscard]] VkPipelineCache handle() const noexcept {
+        return cache_;
+    }
     // Persists the cache to disk (best effort; failures are logged, not fatal).
     void save(std::string_view cache_file) const;
 
-private:
+  private:
     void destroy();
     Device* device_ = nullptr;
     VkPipelineCache cache_ = VK_NULL_HANDLE;

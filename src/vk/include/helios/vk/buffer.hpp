@@ -15,7 +15,7 @@
 namespace helios::vk {
 
 class Buffer {
-public:
+  public:
     Buffer() = default;
     // Allocates a buffer with the given usage/flags. When host_visible is
     // set, the buffer is mappable (VMA_MEMORY_USAGE_AUTO_PREFER_HOST).
@@ -28,9 +28,15 @@ public:
     Buffer& operator=(Buffer const&) = delete;
     ~Buffer();
 
-    [[nodiscard]] VkBuffer handle() const noexcept { return buffer_; }
-    [[nodiscard]] VkDeviceSize size() const noexcept { return size_; }
-    [[nodiscard]] bool valid() const noexcept { return buffer_ != VK_NULL_HANDLE; }
+    [[nodiscard]] VkBuffer handle() const noexcept {
+        return buffer_;
+    }
+    [[nodiscard]] VkDeviceSize size() const noexcept {
+        return size_;
+    }
+    [[nodiscard]] bool valid() const noexcept {
+        return buffer_ != VK_NULL_HANDLE;
+    }
 
     // Maps and copies data into the buffer (host-visible only).
     [[nodiscard]] core::Result<void> upload(void const* data, VkDeviceSize size, VkDeviceSize offset = 0);
@@ -39,7 +45,7 @@ public:
     [[nodiscard]] core::Result<void*> map();
     void unmap();
 
-private:
+  private:
     void destroy();
 
     VmaAllocator allocator_ = VK_NULL_HANDLE;

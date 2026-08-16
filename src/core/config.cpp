@@ -15,7 +15,8 @@ void setNested(nlohmann::json& root, std::string_view key, nlohmann::json value)
     std::size_t start = 0;
     while (true) {
         const std::size_t dot = key.find('.', start);
-        const std::string part(key.substr(start, dot == std::string_view::npos ? key.size() - start : dot - start));
+        const std::string part(
+            key.substr(start, dot == std::string_view::npos ? key.size() - start : dot - start));
         if (dot == std::string_view::npos) {
             (*node)[part] = std::move(value);
             return;
@@ -34,7 +35,8 @@ nlohmann::json const* resolveKey(nlohmann::json const& root, std::string_view ke
     std::size_t start = 0;
     while (true) {
         const std::size_t dot = key.find('.', start);
-        const std::string_view part = key.substr(start, dot == std::string_view::npos ? std::string_view::npos : dot - start);
+        const std::string_view part =
+            key.substr(start, dot == std::string_view::npos ? std::string_view::npos : dot - start);
         if (!node->is_object()) {
             return nullptr;
         }
@@ -50,7 +52,6 @@ nlohmann::json const* resolveKey(nlohmann::json const& root, std::string_view ke
     }
 }
 } // namespace
-
 
 namespace helios::core {
 
@@ -112,8 +113,7 @@ Result<std::string> Config::getString(std::string_view key, std::string fallback
         return fallback;
     }
     if (!node->is_string()) {
-        return makeError(ErrorCode::InvalidArgument,
-                         "config key '" + std::string(key) + "' is not a string");
+        return makeError(ErrorCode::InvalidArgument, "config key '" + std::string(key) + "' is not a string");
     }
     return node->get<std::string>();
 }
@@ -136,8 +136,7 @@ Result<std::uint32_t> Config::getUInt(std::string_view key, std::uint32_t fallba
         return r.error();
     }
     if (r.value() < 0) {
-        return makeError(ErrorCode::InvalidArgument,
-                         "config key '" + std::string(key) + "' is negative");
+        return makeError(ErrorCode::InvalidArgument, "config key '" + std::string(key) + "' is negative");
     }
     return static_cast<std::uint32_t>(r.value());
 }
@@ -148,8 +147,7 @@ Result<double> Config::getDouble(std::string_view key, double fallback) const {
         return fallback;
     }
     if (!node->is_number()) {
-        return makeError(ErrorCode::InvalidArgument,
-                         "config key '" + std::string(key) + "' is not a number");
+        return makeError(ErrorCode::InvalidArgument, "config key '" + std::string(key) + "' is not a number");
     }
     return node->get<double>();
 }
@@ -164,14 +162,15 @@ Result<bool> Config::getBool(std::string_view key, bool fallback) const {
     }
     if (node->is_string()) {
         const std::string s = node->get<std::string>();
-        if (s == "true" || s == "1") return true;
-        if (s == "false" || s == "0") return false;
+        if (s == "true" || s == "1")
+            return true;
+        if (s == "false" || s == "0")
+            return false;
     }
     if (node->is_number_integer()) {
         return node->get<int>() != 0;
     }
-    return makeError(ErrorCode::InvalidArgument,
-                     "config key '" + std::string(key) + "' is not a boolean");
+    return makeError(ErrorCode::InvalidArgument, "config key '" + std::string(key) + "' is not a boolean");
 }
 
 void Config::set(std::string key, nlohmann::json value) {

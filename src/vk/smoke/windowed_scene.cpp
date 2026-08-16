@@ -40,9 +40,8 @@ struct WindowedSmokeScene::Impl {
     VkDescriptorSet depth_set = VK_NULL_HANDLE;
 };
 
-core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Device& device,
-                                                                             VkFormat color_format,
-                                                                             VkFormat depth_format) {
+core::Result<std::unique_ptr<WindowedSmokeScene>>
+WindowedSmokeScene::create(Device& device, VkFormat color_format, VkFormat depth_format) {
     auto scene = std::unique_ptr<WindowedSmokeScene>(new WindowedSmokeScene());
     auto impl = std::make_unique<Impl>();
     scene->device_ = &device;
@@ -70,13 +69,16 @@ core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Dev
     impl->depth_fs = std::move(dep_fs.value());
 
     auto ubo_layout = DescriptorSetLayout::create(
-        device, {{{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}}},
+        device, {{{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}}},
         "win-ubo-layout");
-    if (ubo_layout.failed()) return ubo_layout.error();
+    if (ubo_layout.failed())
+        return ubo_layout.error();
     impl->ubo_layout = std::move(ubo_layout.value());
 
     auto tri_layout = PipelineLayout::create(device, {impl->ubo_layout.handle()}, {}, "win-triangle-layout");
-    if (tri_layout.failed()) return tri_layout.error();
+    if (tri_layout.failed())
+        return tri_layout.error();
     impl->triangle_layout = std::move(tri_layout.value());
 
     GraphicsPipelineDescription tri_desc;
@@ -89,11 +91,13 @@ core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Dev
     tri_desc.enable_depth_write = false;
     tri_desc.debug_name = "win-triangle";
     auto tri_pipeline = Pipeline::create(device, tri_desc);
-    if (tri_pipeline.failed()) return tri_pipeline.error();
+    if (tri_pipeline.failed())
+        return tri_pipeline.error();
     impl->triangle_pipeline = std::move(tri_pipeline.value());
 
     auto depth_layout = PipelineLayout::create(device, {impl->ubo_layout.handle()}, {}, "win-depth-layout");
-    if (depth_layout.failed()) return depth_layout.error();
+    if (depth_layout.failed())
+        return depth_layout.error();
     impl->depth_layout = std::move(depth_layout.value());
 
     GraphicsPipelineDescription depth_desc;
@@ -108,11 +112,13 @@ core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Dev
     depth_desc.cull_mode = VK_CULL_MODE_NONE;
     depth_desc.debug_name = "win-depth";
     auto depth_pipeline = Pipeline::create(device, depth_desc);
-    if (depth_pipeline.failed()) return depth_pipeline.error();
+    if (depth_pipeline.failed())
+        return depth_pipeline.error();
     impl->depth_pipeline = std::move(depth_pipeline.value());
 
     auto pool = DescriptorPool::create(device, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 8}}, 8, "win-pool");
-    if (pool.failed()) return pool.error();
+    if (pool.failed())
+        return pool.error();
     impl->pool = std::move(pool.value());
 
     auto tri_set = impl->pool.allocate(impl->ubo_layout.handle());
@@ -123,10 +129,10 @@ core::Result<std::unique_ptr<WindowedSmokeScene>> WindowedSmokeScene::create(Dev
     impl->triangle_set = tri_set.value();
     impl->depth_set = dep_set.value();
 
-    auto tri_ubo = Buffer::create(device, sizeof(shaders::TriangleUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, true,
-                                  "win-triangle-ubo");
-    auto dep_ubo = Buffer::create(device, sizeof(shaders::DepthParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, true,
-                                  "win-depth-ubo");
+    auto tri_ubo = Buffer::create(device, sizeof(shaders::TriangleUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                  true, "win-triangle-ubo");
+    auto dep_ubo = Buffer::create(device, sizeof(shaders::DepthParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                  true, "win-depth-ubo");
     if (tri_ubo.failed() || dep_ubo.failed()) {
         return core::makeError(core::ErrorCode::Vulkan, "ubo allocation failed");
     }

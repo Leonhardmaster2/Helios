@@ -18,8 +18,8 @@
 #include <string>
 #include <vector>
 
-#include <spirv_reflect.h>
 #include <shaders_embedded.hpp>
+#include <spirv_reflect.h>
 
 namespace fs = std::filesystem;
 
@@ -69,7 +69,9 @@ struct SpvModule {
 
 TEST_CASE("embedded shaders present and hashes match the manifest") {
     // Every compiled shader must be embedded and must match the manifest hashes.
-    for (auto const& name : {"triangle.slang.vertex.spv", "triangle.slang.fragment.spv", "depth.slang.vertex.spv", "depth.slang.fragment.spv", "compute.slang.compute.spv"}) {
+    for (auto const& name :
+         {"triangle.slang.vertex.spv", "triangle.slang.fragment.spv", "depth.slang.vertex.spv",
+          "depth.slang.fragment.spv", "compute.slang.compute.spv"}) {
         const std::string msg = "embedded shader missing: " + std::string(name);
         CHECK_MESSAGE(embeddedSpirv(name) != nullptr, msg);
     }
@@ -97,7 +99,8 @@ TEST_CASE("triangle shader ABI") {
     bool found_vs = false;
     for (std::uint32_t i = 0; i < spv.module.entry_point_count; ++i) {
         const auto& e = spv.module.entry_points[i];
-        if (std::string(e.name) == "main" && e.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT) found_vs = true;
+        if (std::string(e.name) == "main" && e.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT)
+            found_vs = true;
     }
     CHECK(found_vs);
 
@@ -107,7 +110,8 @@ TEST_CASE("triangle shader ABI") {
     bool found_fs = false;
     for (std::uint32_t i = 0; i < spv_fs.module.entry_point_count; ++i) {
         const auto& e = spv_fs.module.entry_points[i];
-        if (std::string(e.name) == "main" && e.shader_stage == SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT) found_fs = true;
+        if (std::string(e.name) == "main" && e.shader_stage == SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT)
+            found_fs = true;
     }
     CHECK(found_fs);
 
@@ -206,13 +210,15 @@ TEST_CASE("compute shader ABI") {
 
 TEST_CASE("spir-v validity basics") {
     // Every module must be valid SPIR-V: magic + version header.
-    for (auto const& name : {"triangle.slang.vertex.spv", "triangle.slang.fragment.spv", "depth.slang.vertex.spv", "depth.slang.fragment.spv", "compute.slang.compute.spv"}) {
+    for (auto const& name :
+         {"triangle.slang.vertex.spv", "triangle.slang.fragment.spv", "depth.slang.vertex.spv",
+          "depth.slang.fragment.spv", "compute.slang.compute.spv"}) {
         auto bytes = embeddedSpirv(name);
         REQUIRE(bytes != nullptr);
         CHECK(bytes->size() >= 20);
         CHECK(bytes->size() % 4 == 0);
-        const std::uint32_t magic = (*bytes)[0] | ((*bytes)[1] << 8) | ((*bytes)[2] << 16) |
-                                    ((*bytes)[3] << 24);
+        const std::uint32_t magic =
+            (*bytes)[0] | ((*bytes)[1] << 8) | ((*bytes)[2] << 16) | ((*bytes)[3] << 24);
         CHECK(magic == 0x07230203);
     }
 }

@@ -89,7 +89,8 @@ core::Result<Pipeline> Pipeline::create(Device& device, GraphicsPipelineDescript
     info.layout = desc.layout;
 
     VkPipeline pipeline = VK_NULL_HANDLE;
-    const VkResult r = vkCreateGraphicsPipelines(device.handle(), VK_NULL_HANDLE, 1, &info, nullptr, &pipeline);
+    const VkResult r =
+        vkCreateGraphicsPipelines(device.handle(), VK_NULL_HANDLE, 1, &info, nullptr, &pipeline);
     if (r != VK_SUCCESS) {
         return core::makeError(core::ErrorCode::Vulkan,
                                "vkCreateGraphicsPipelines failed: " + std::to_string(static_cast<int>(r)));
@@ -142,7 +143,8 @@ core::Result<ComputePipeline> ComputePipeline::create(Device& device, VkShaderMo
     info.layout = layout;
 
     VkPipeline pipeline = VK_NULL_HANDLE;
-    const VkResult r = vkCreateComputePipelines(device.handle(), VK_NULL_HANDLE, 1, &info, nullptr, &pipeline);
+    const VkResult r =
+        vkCreateComputePipelines(device.handle(), VK_NULL_HANDLE, 1, &info, nullptr, &pipeline);
     if (r != VK_SUCCESS) {
         return core::makeError(core::ErrorCode::Vulkan,
                                "vkCreateComputePipelines failed: " + std::to_string(static_cast<int>(r)));
@@ -193,7 +195,8 @@ core::Result<PipelineCache> PipelineCache::create(Device& device, std::string_vi
             std::uint32_t header[4];
             std::memcpy(header, data.value().data(), 16);
             const bool valid = header[0] == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
-                               header[1] == device.report().vendor_id && header[2] == device.report().device_id;
+                               header[1] == device.report().vendor_id &&
+                               header[2] == device.report().device_id;
             if (valid) {
                 initial = std::move(data.value());
             } else {

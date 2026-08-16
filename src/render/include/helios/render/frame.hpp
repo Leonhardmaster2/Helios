@@ -13,11 +13,14 @@ namespace helios::render {
 struct FrameContext {
     VkCommandPool pool = VK_NULL_HANDLE;
     VkCommandBuffer cmd = VK_NULL_HANDLE;
-    VkSemaphore image_available = VK_NULL_HANDLE;
-    VkSemaphore render_finished = VK_NULL_HANDLE;
-    VkFence in_flight = VK_NULL_HANDLE;
+    VkSemaphore image_available = VK_NULL_HANDLE; // acquire -> submit
+    VkFence in_flight = VK_NULL_HANDLE;           // submit completion
     bool submitted = false;
 };
+// Render-finished semaphores are indexed by SWAPCHAIN IMAGE (not frame
+// slot): a present may still reference the semaphore when the frame slot is
+// reused — per-image semaphores avoid the reuse hazard (Khronos swapchain
+// semaphore reuse guidance).
 
 // Creates the per-frame command pool + sync primitives.
 [[nodiscard]] core::Result<FrameContext> createFrameContext(helios::vk::Device& device, std::string_view tag);

@@ -15,7 +15,7 @@ namespace helios::core {
 
 // Monotonic high-resolution clock (QPC on Windows).
 class Clock {
-public:
+  public:
     using rep = std::int64_t;
     using period = std::nano;
     using duration = std::chrono::duration<rep, period>;
@@ -26,7 +26,7 @@ public:
 
 // Ring-buffer frame-time statistics: p50/p95/p99/max/avg in seconds.
 class FrameStats {
-public:
+  public:
     explicit FrameStats(std::size_t capacity = 4096) : samples_(capacity) {}
 
     void add(double seconds) {
@@ -43,7 +43,9 @@ public:
         }
     }
 
-    [[nodiscard]] std::size_t count() const noexcept { return count_; }
+    [[nodiscard]] std::size_t count() const noexcept {
+        return count_;
+    }
 
     // Percentile of recorded samples (0..100). Requires count() > 0.
     [[nodiscard]] double percentile(double pct) const;
@@ -60,7 +62,7 @@ public:
         sum_ = 0.0;
     }
 
-private:
+  private:
     std::vector<double> samples_;
     std::size_t count_ = 0;
     std::size_t next_ = 0;
@@ -70,14 +72,16 @@ private:
 
 // RAII scope timer; records elapsed seconds on destruction into FrameStats.
 class ScopedTimer {
-public:
+  public:
     explicit ScopedTimer(FrameStats& stats) : stats_(stats), start_(Clock::now()) {}
-    ~ScopedTimer() { stats_.add(elapsed()); }
+    ~ScopedTimer() {
+        stats_.add(elapsed());
+    }
     [[nodiscard]] double elapsed() const {
         return std::chrono::duration<double>(Clock::now() - start_).count();
     }
 
-private:
+  private:
     FrameStats& stats_;
     Clock::time_point start_;
 };

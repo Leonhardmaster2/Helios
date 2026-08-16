@@ -117,15 +117,15 @@ core::Result<void> Swapchain::createInternal(std::uint32_t width, std::uint32_t 
     info_.image_count = count;
 
     core::logInfo("Swapchain: {}x{}, format {}, present mode {}, images {}", extent.width, extent.height,
-                  std::to_string(static_cast<int>(format.format)), std::to_string(static_cast<int>(present_mode)),
-                  count);
+                  std::to_string(static_cast<int>(format.format)),
+                  std::to_string(static_cast<int>(present_mode)), count);
     return Result<void>{};
 }
 
 core::Result<std::uint32_t> Swapchain::acquireNextImage(VkSemaphore signal_semaphore, VkFence fence) {
     std::uint32_t index = 0;
-    const VkResult r = vkAcquireNextImageKHR(device_->handle(), swapchain_, UINT64_MAX, signal_semaphore, fence,
-                                             &index);
+    const VkResult r =
+        vkAcquireNextImageKHR(device_->handle(), swapchain_, UINT64_MAX, signal_semaphore, fence, &index);
     if (r == VK_SUCCESS || r == VK_SUBOPTIMAL_KHR) {
         return index;
     }

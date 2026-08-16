@@ -2,8 +2,8 @@
 // Copyright (c) 2026 the Helios authors and contributors
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
+#include <vulkan/vulkan.h>
 
 namespace helios::vk {
 
@@ -15,8 +15,8 @@ namespace helios::vk {
                                     VmaAllocationInfo* out_info = nullptr);
 
 [[nodiscard]] VkImage createImage(VmaAllocator allocator, VkExtent3D extent, VkFormat format,
-                                  VkImageUsageFlags usage, VmaMemoryUsage memory_usage,
-                                  VkImage& out_image, VmaAllocation& out_allocation);
+                                  VkImageUsageFlags usage, VmaMemoryUsage memory_usage, VkImage& out_image,
+                                  VmaAllocation& out_allocation);
 
 void destroyBuffer(VmaAllocator allocator, VkBuffer buffer, VmaAllocation allocation);
 void destroyImage(VmaAllocator allocator, VkImage image, VmaAllocation allocation);

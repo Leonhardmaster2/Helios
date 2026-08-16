@@ -17,6 +17,7 @@ namespace {
 // Queries the promoted feature structs Helios relies on (D-004).
 struct QueriedFeatures {
     VkPhysicalDeviceVulkan13Features f13;
+    VkPhysicalDeviceVulkan11Features f11;
     VkPhysicalDeviceTimelineSemaphoreFeatures timeline;
     VkPhysicalDeviceBufferDeviceAddressFeatures buffer_address;
     VkPhysicalDeviceHostQueryResetFeatures host_query_reset;
@@ -26,11 +27,13 @@ struct QueriedFeatures {
 QueriedFeatures queryFeatures(VkPhysicalDevice physical) {
     QueriedFeatures q{};
     q.f13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    q.f11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
     q.timeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
     q.buffer_address.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
     q.host_query_reset.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES;
     q.descriptor_indexing.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    q.f13.pNext = &q.timeline;
+    q.f13.pNext = &q.f11;
+    q.f11.pNext = &q.timeline;
     q.timeline.pNext = &q.buffer_address;
     q.buffer_address.pNext = &q.host_query_reset;
     q.host_query_reset.pNext = &q.descriptor_indexing;
@@ -71,44 +74,40 @@ nlohmann::json deviceReportToJson(DeviceReport const& r) {
     }
     j["queue_families"] = std::move(qf);
     j["used_queue_family"] = r.used_queue_family;
-    j["features"] = nlohmann::json{{"dynamic_rendering", r.dynamic_rendering},
-                                   {"synchronization2", r.synchronization2},
-                                   {"timeline_semaphore", r.timeline_semaphore},
-                                   {"buffer_device_address", r.buffer_device_address},
-                                   {"descriptor_indexing", r.descriptor_indexing},
-                                   {"host_query_reset", r.host_query_reset},
-                                   {"shader_float64", r.shader_float64},
-                                   {"maintenance4", r.maintenance4}};
+    j["features"] = nlohmann::json{
+        {"dynamic_rendering", r.dynamic_rendering},     {"synchronization2", r.synchronization2},
+        {"timeline_semaphore", r.timeline_semaphore},   {"buffer_device_address", r.buffer_device_address},
+        {"descriptor_indexing", r.descriptor_indexing}, {"host_query_reset", r.host_query_reset},
+        {"shader_float64", r.shader_float64},           {"maintenance4", r.maintenance4}};
     j["timestamp_period_ns"] = r.timestamp_period_ns;
     j["timestamp_compute_and_graphics"] = r.timestamp_compute_and_graphics;
-    j["depth_formats"] =
-        nlohmann::json{{"D32_SFLOAT", r.depth_d32_sfloat},
-                       {"D32_SFLOAT_S8_UINT", r.depth_d32_sfloat_s8},
-                       {"D24_UNORM_S8_UINT", r.depth_d24_unorm_s8},
-                       {"choice", r.depth_choice_name}};
-    j["limits"] = nlohmann::json{
-        {"max_image_dimension_2d", r.max_image_dimension_2d},
-        {"max_bound_descriptor_sets", r.max_bound_descriptor_sets},
-        {"max_per_stage_resources", r.max_per_stage_resources},
-        {"max_descriptor_set_uniform_buffers", r.max_descriptor_set_uniform_buffers},
-        {"max_descriptor_set_storage_buffers", r.max_descriptor_set_storage_buffers},
-        {"max_descriptor_set_sampled_images", r.max_descriptor_set_sampled_images},
-        {"max_descriptor_set_samplers", r.max_descriptor_set_samplers},
-        {"max_memory_allocation_count", r.max_memory_allocation_count},
-        {"max_push_constants_size", r.max_push_constants_size},
-        {"max_vertex_input_bindings", r.max_vertex_input_bindings},
-        {"max_vertex_input_attributes", r.max_vertex_input_attributes},
-        {"max_vertex_output_components", r.max_vertex_output_components},
-        {"max_fragment_input_components", r.max_fragment_input_components},
-        {"max_framebuffer_width", r.max_framebuffer_width},
-        {"max_framebuffer_height", r.max_framebuffer_height},
-        {"max_color_attachments", r.max_color_attachments},
-        {"max_uniform_buffer_range", r.max_uniform_buffer_range},
-        {"max_storage_buffer_range", r.max_storage_buffer_range},
-        {"min_uniform_buffer_offset_alignment", r.min_uniform_buffer_offset_alignment},
-        {"min_storage_buffer_offset_alignment", r.min_storage_buffer_offset_alignment},
-        {"max_compute_shared_memory_size", r.max_compute_shared_memory_size},
-        {"max_compute_work_group_invocations", r.max_compute_work_group_invocations}};
+    j["depth_formats"] = nlohmann::json{{"D32_SFLOAT", r.depth_d32_sfloat},
+                                        {"D32_SFLOAT_S8_UINT", r.depth_d32_sfloat_s8},
+                                        {"D24_UNORM_S8_UINT", r.depth_d24_unorm_s8},
+                                        {"choice", r.depth_choice_name}};
+    j["limits"] =
+        nlohmann::json{{"max_image_dimension_2d", r.max_image_dimension_2d},
+                       {"max_bound_descriptor_sets", r.max_bound_descriptor_sets},
+                       {"max_per_stage_resources", r.max_per_stage_resources},
+                       {"max_descriptor_set_uniform_buffers", r.max_descriptor_set_uniform_buffers},
+                       {"max_descriptor_set_storage_buffers", r.max_descriptor_set_storage_buffers},
+                       {"max_descriptor_set_sampled_images", r.max_descriptor_set_sampled_images},
+                       {"max_descriptor_set_samplers", r.max_descriptor_set_samplers},
+                       {"max_memory_allocation_count", r.max_memory_allocation_count},
+                       {"max_push_constants_size", r.max_push_constants_size},
+                       {"max_vertex_input_bindings", r.max_vertex_input_bindings},
+                       {"max_vertex_input_attributes", r.max_vertex_input_attributes},
+                       {"max_vertex_output_components", r.max_vertex_output_components},
+                       {"max_fragment_input_components", r.max_fragment_input_components},
+                       {"max_framebuffer_width", r.max_framebuffer_width},
+                       {"max_framebuffer_height", r.max_framebuffer_height},
+                       {"max_color_attachments", r.max_color_attachments},
+                       {"max_uniform_buffer_range", r.max_uniform_buffer_range},
+                       {"max_storage_buffer_range", r.max_storage_buffer_range},
+                       {"min_uniform_buffer_offset_alignment", r.min_uniform_buffer_offset_alignment},
+                       {"min_storage_buffer_offset_alignment", r.min_storage_buffer_offset_alignment},
+                       {"max_compute_shared_memory_size", r.max_compute_shared_memory_size},
+                       {"max_compute_work_group_invocations", r.max_compute_work_group_invocations}};
     j["available_device_extensions"] = r.available_device_extensions;
     j["enabled_device_extensions"] = r.enabled_device_extensions;
     j["selection_reason"] = r.selection_reason;
@@ -117,7 +116,7 @@ nlohmann::json deviceReportToJson(DeviceReport const& r) {
 }
 
 void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR surface,
-                     DeviceOptions const& options, std::string& rejection_reason) {
+                       DeviceOptions const& options, std::string& rejection_reason) {
 
     VkPhysicalDeviceProperties props{};
     vkGetPhysicalDeviceProperties(physical, &props);
@@ -153,6 +152,7 @@ void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR 
     const auto f = queryFeatures(physical);
     VkPhysicalDeviceFeatures base{};
     vkGetPhysicalDeviceFeatures(physical, &base);
+    r.shader_draw_parameters = f.f11.shaderDrawParameters == VK_TRUE;
     r.dynamic_rendering = f.f13.dynamicRendering == VK_TRUE;
     r.synchronization2 = f.f13.synchronization2 == VK_TRUE;
     r.timeline_semaphore = f.timeline.timelineSemaphore == VK_TRUE;
@@ -163,15 +163,15 @@ void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR 
     r.shader_float64 = base.shaderFloat64 == VK_TRUE;
     r.maintenance4 = f.f13.maintenance4 == VK_TRUE;
 
-    const bool required_ok =
-        r.dynamic_rendering && r.synchronization2 && r.timeline_semaphore && r.buffer_device_address &&
-        r.host_query_reset;
+    const bool required_ok = r.dynamic_rendering && r.synchronization2 && r.timeline_semaphore &&
+                             r.buffer_device_address && r.host_query_reset;
     if (!required_ok) {
-        rejection_reason = "missing required features (dynamic_rendering=" + std::to_string(r.dynamic_rendering) +
-                           ", synchronization2=" + std::to_string(r.synchronization2) +
-                           ", timeline_semaphore=" + std::to_string(r.timeline_semaphore) +
-                           ", buffer_device_address=" + std::to_string(r.buffer_device_address) +
-                           ", host_query_reset=" + std::to_string(r.host_query_reset) + ")";
+        rejection_reason =
+            "missing required features (dynamic_rendering=" + std::to_string(r.dynamic_rendering) +
+            ", synchronization2=" + std::to_string(r.synchronization2) +
+            ", timeline_semaphore=" + std::to_string(r.timeline_semaphore) +
+            ", buffer_device_address=" + std::to_string(r.buffer_device_address) +
+            ", host_query_reset=" + std::to_string(r.host_query_reset) + ")";
         return;
     }
 
@@ -227,7 +227,7 @@ void probeDeviceReport(DeviceReport& r, VkPhysicalDevice physical, VkSurfaceKHR 
             rejection_reason = "no supported 32-bit-float (or fallback) depth format";
             return;
         }
-        r.depth_choice_name = r.depth_choice == DepthFormatChoice::D32Sfloat   ? "D32_SFLOAT"
+        r.depth_choice_name = r.depth_choice == DepthFormatChoice::D32Sfloat     ? "D32_SFLOAT"
                               : r.depth_choice == DepthFormatChoice::D32SfloatS8 ? "D32_SFLOAT_S8_UINT"
                                                                                  : "D24_UNORM_S8_UINT";
     }

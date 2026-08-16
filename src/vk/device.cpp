@@ -7,8 +7,8 @@
 #include "helios/core/log.hpp"
 
 #include <algorithm>
-#include <volk.h>
 #include <vk_mem_alloc.h>
+#include <volk.h>
 
 namespace helios::vk {
 
@@ -20,11 +20,14 @@ namespace {
 
 int scoreDevice(DeviceReport const& report) {
     int score = 0;
-    if (report.device_type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 1000;
-    if (report.device_type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) score += 400;
-    score += static_cast<int>(report.api_version >> 22U) * 100; // API major
+    if (report.device_type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        score += 1000;
+    if (report.device_type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+        score += 400;
+    score += static_cast<int>(report.api_version >> 22U) * 100;           // API major
     score += static_cast<int>((report.api_version >> 12U) & 0x3FFU) * 10; // API minor
-    score += static_cast<int>(std::min<std::uint64_t>(report.device_local_heap_bytes >> 30U, 64)); // GiB capped
+    score +=
+        static_cast<int>(std::min<std::uint64_t>(report.device_local_heap_bytes >> 30U, 64)); // GiB capped
     // Prefer a single graphics+compute+transfer family (serialized baseline).
     for (auto const& q : report.queue_families) {
         if (q.supports_graphics && q.supports_compute && q.supports_transfer) {
@@ -40,7 +43,8 @@ int scoreDevice(DeviceReport const& report) {
 core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::optional<VkSurfaceKHR> surface,
                                                      DeviceOptions const& options) {
     std::uint32_t device_count = 0;
-    if (vkEnumeratePhysicalDevices(instance.handle(), &device_count, nullptr) != VK_SUCCESS || device_count == 0) {
+    if (vkEnumeratePhysicalDevices(instance.handle(), &device_count, nullptr) != VK_SUCCESS ||
+        device_count == 0) {
         return core::makeError(core::ErrorCode::Unsupported, "no Vulkan physical devices found");
     }
     std::vector<VkPhysicalDevice> devices(device_count);
@@ -67,7 +71,8 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
         if (surface.has_value()) {
             bool can_present = false;
             for (auto const& q : c.report.queue_families) {
-                if (q.supports_graphics && q.supports_present) can_present = true;
+                if (q.supports_graphics && q.supports_present)
+                    can_present = true;
             }
             if (!can_present) {
                 rejected.push_back(c.report.device_name + ": cannot present to the surface");
@@ -80,7 +85,8 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
 
     if (candidates.empty()) {
         std::string detail;
-        for (auto const& r : rejected) detail += "  - " + r + "\n";
+        for (auto const& r : rejected)
+            detail += "  - " + r + "\n";
         return core::makeError(core::ErrorCode::Unsupported,
                                "no suitable Vulkan device; rejected:\n" + detail);
     }
@@ -133,7 +139,8 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
     }
     bool has_debug_utils = false;
     for (auto const& e : chosen.report.available_device_extensions) {
-        if (e == VK_EXT_DEBUG_UTILS_EXTENSION_NAME) has_debug_utils = true;
+        if (e == VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+            has_debug_utils = true;
     }
     if (has_debug_utils) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -150,6 +157,12 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
     f13.dynamicRendering = VK_TRUE;
     f13.synchronization2 = VK_TRUE;
     f13.maintenance4 = VK_TRUE;
+
+    // Shaders use SV_VertexID/SV_InstanceID -> SPIR-V DrawParameters
+    // capability -> requires shaderDrawParameters (VUID-...-pCode-08740).
+    VkPhysicalDeviceVulkan11Features f11{};
+    f11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    f11.shaderDrawParameters = VK_TRUE;
 
     VkPhysicalDeviceTimelineSemaphoreFeatures ftimeline{};
     ftimeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
@@ -176,7 +189,8 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
     VkPhysicalDeviceFeatures2 f2{};
     f2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     f2.pNext = &f13;
-    f13.pNext = &ftimeline;
+    f13.pNext = &f11;
+    f11.pNext = &ftimeline;
     ftimeline.pNext = &faddress;
     faddress.pNext = &fhqr;
     fhqr.pNext = &fdi;
@@ -191,7 +205,8 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
         vkGetPhysicalDeviceFeatures2(chosen.physical, &p2);
         fdi.shaderSampledImageArrayNonUniformIndexing = probe.shaderSampledImageArrayNonUniformIndexing;
         fdi.descriptorBindingSampledImageUpdateAfterBind = probe.descriptorBindingSampledImageUpdateAfterBind;
-        fdi.descriptorBindingStorageBufferUpdateAfterBind = probe.descriptorBindingStorageBufferUpdateAfterBind;
+        fdi.descriptorBindingStorageBufferUpdateAfterBind =
+            probe.descriptorBindingStorageBufferUpdateAfterBind;
         fdi.descriptorBindingPartiallyBound = probe.descriptorBindingPartiallyBound;
         fdi.descriptorBindingVariableDescriptorCount = probe.descriptorBindingVariableDescriptorCount;
         fdi.runtimeDescriptorArray = probe.runtimeDescriptorArray;
@@ -221,13 +236,19 @@ core::Result<std::unique_ptr<Device>> Device::create(Instance& instance, std::op
     device->compute_queue_ = device->graphics_queue_;
     device->transfer_queue_ = device->graphics_queue_;
 
-    // VMA allocator.
+    // VMA allocator. VMA 3.x dynamic mode (volk integration) requires the
+    // proc-addr functions to be passed via pVulkanFunctions; other members
+    // are fetched from the instance/device by VMA itself.
+    VmaVulkanFunctions vma_functions{};
+    vma_functions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vma_functions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
     VmaAllocatorCreateInfo vma_info{};
     vma_info.vulkanApiVersion = std::min(chosen.report.api_version, VK_API_VERSION_1_3);
     vma_info.physicalDevice = chosen.physical;
     vma_info.device = device->device_;
     vma_info.instance = instance.handle();
     vma_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    vma_info.pVulkanFunctions = &vma_functions;
     const VkResult vma_result = vmaCreateAllocator(&vma_info, &device->allocator_);
     if (vma_result != VK_SUCCESS) {
         return core::makeError(core::ErrorCode::Vulkan,

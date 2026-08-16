@@ -25,13 +25,13 @@ struct SwapchainInfo {
 };
 
 class Swapchain {
-public:
+  public:
     ~Swapchain();
     Swapchain(Swapchain const&) = delete;
     Swapchain& operator=(Swapchain const&) = delete;
 
-    [[nodiscard]] static core::Result<std::unique_ptr<Swapchain>> create(
-        Device& device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height);
+    [[nodiscard]] static core::Result<std::unique_ptr<Swapchain>>
+    create(Device& device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height);
 
     // Acquires the next image (blocks on the acquire fence).
     // Returns VK_SUCCESS, VK_SUBOPTIMAL_KHR or VK_ERROR_OUT_OF_DATE_KHR.
@@ -43,13 +43,23 @@ public:
     // Recreates the swapchain (after resize or OUT_OF_DATE). Images change.
     [[nodiscard]] core::Result<void> recreate(std::uint32_t width, std::uint32_t height);
 
-    [[nodiscard]] SwapchainInfo const& info() const noexcept { return info_; }
-    [[nodiscard]] VkSwapchainKHR handle() const noexcept { return swapchain_; }
-    [[nodiscard]] VkImage image(std::uint32_t index) const noexcept { return images_[index]; }
-    [[nodiscard]] std::vector<VkImage> const& images() const noexcept { return images_; }
-    [[nodiscard]] VkSurfaceKHR surface() const noexcept { return surface_; }
+    [[nodiscard]] SwapchainInfo const& info() const noexcept {
+        return info_;
+    }
+    [[nodiscard]] VkSwapchainKHR handle() const noexcept {
+        return swapchain_;
+    }
+    [[nodiscard]] VkImage image(std::uint32_t index) const noexcept {
+        return images_[index];
+    }
+    [[nodiscard]] std::vector<VkImage> const& images() const noexcept {
+        return images_;
+    }
+    [[nodiscard]] VkSurfaceKHR surface() const noexcept {
+        return surface_;
+    }
 
-private:
+  private:
     Swapchain() = default;
     void destroy();
     [[nodiscard]] core::Result<void> createInternal(std::uint32_t width, std::uint32_t height);

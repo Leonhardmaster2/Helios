@@ -8,17 +8,28 @@ namespace helios::core {
 
 std::string_view toString(ErrorCode code) noexcept {
     switch (code) {
-    case ErrorCode::Ok: return "ok";
-    case ErrorCode::InvalidArgument: return "invalid_argument";
-    case ErrorCode::NotFound: return "not_found";
-    case ErrorCode::Io: return "io";
-    case ErrorCode::OutOfRange: return "out_of_range";
-    case ErrorCode::Unsupported: return "unsupported";
-    case ErrorCode::Vulkan: return "vulkan";
-    case ErrorCode::Initialization: return "initialization";
-    case ErrorCode::CorruptData: return "corrupt_data";
-    case ErrorCode::Internal: return "internal";
-    case ErrorCode::NotImplemented: return "not_implemented";
+    case ErrorCode::Ok:
+        return "ok";
+    case ErrorCode::InvalidArgument:
+        return "invalid_argument";
+    case ErrorCode::NotFound:
+        return "not_found";
+    case ErrorCode::Io:
+        return "io";
+    case ErrorCode::OutOfRange:
+        return "out_of_range";
+    case ErrorCode::Unsupported:
+        return "unsupported";
+    case ErrorCode::Vulkan:
+        return "vulkan";
+    case ErrorCode::Initialization:
+        return "initialization";
+    case ErrorCode::CorruptData:
+        return "corrupt_data";
+    case ErrorCode::Internal:
+        return "internal";
+    case ErrorCode::NotImplemented:
+        return "not_implemented";
     }
     return "unknown";
 }

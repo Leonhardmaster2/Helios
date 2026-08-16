@@ -11,31 +11,33 @@
 
 namespace helios::core {
 
-template <typename Tag, typename Storage = std::uint32_t>
-class Id {
-public:
+template <typename Tag, typename Storage = std::uint32_t> class Id {
+  public:
     using StorageType = Storage;
 
     constexpr Id() noexcept = default;
 
     explicit constexpr Id(Storage value) noexcept : value_(value) {}
 
-    [[nodiscard]] constexpr Storage value() const noexcept { return value_; }
-    [[nodiscard]] constexpr bool valid() const noexcept { return value_ != invalid_value; }
+    [[nodiscard]] constexpr Storage value() const noexcept {
+        return value_;
+    }
+    [[nodiscard]] constexpr bool valid() const noexcept {
+        return value_ != invalid_value;
+    }
 
     static constexpr Storage invalid_value = static_cast<Storage>(-1);
 
     [[nodiscard]] constexpr bool operator==(Id const&) const noexcept = default;
 
-private:
+  private:
     Storage value_ = invalid_value;
 };
 
 } // namespace helios::core
 
 namespace std {
-template <typename Tag, typename Storage>
-struct hash<helios::core::Id<Tag, Storage>> {
+template <typename Tag, typename Storage> struct hash<helios::core::Id<Tag, Storage>> {
     std::size_t operator()(helios::core::Id<Tag, Storage> const& id) const noexcept {
         return std::hash<Storage>{}(id.value());
     }

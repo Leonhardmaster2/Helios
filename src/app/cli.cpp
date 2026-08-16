@@ -11,7 +11,8 @@ bool parseUInt(std::string const& value, std::uint32_t& out) {
     try {
         std::size_t pos = 0;
         const unsigned long v = std::stoul(value, &pos);
-        if (pos != value.size()) return false;
+        if (pos != value.size())
+            return false;
         out = static_cast<std::uint32_t>(v);
         return true;
     } catch (...) {
@@ -61,13 +62,17 @@ CliOptions parseCli(int argc, char** argv) {
         } else {
             std::string v;
             if (value("--width", v)) {
-                if (!parseUInt(v, options.width)) std::fprintf(stderr, "bad --width: %s\n", v.c_str());
+                if (!parseUInt(v, options.width))
+                    std::fprintf(stderr, "bad --width: %s\n", v.c_str());
             } else if (value("--height", v)) {
-                if (!parseUInt(v, options.height)) std::fprintf(stderr, "bad --height: %s\n", v.c_str());
+                if (!parseUInt(v, options.height))
+                    std::fprintf(stderr, "bad --height: %s\n", v.c_str());
             } else if (value("--frames", v)) {
-                if (!parseUInt(v, options.frames)) std::fprintf(stderr, "bad --frames: %s\n", v.c_str());
+                if (!parseUInt(v, options.frames))
+                    std::fprintf(stderr, "bad --frames: %s\n", v.c_str());
             } else if (value("--iterations", v)) {
-                if (!parseUInt(v, options.iterations)) std::fprintf(stderr, "bad --iterations: %s\n", v.c_str());
+                if (!parseUInt(v, options.iterations))
+                    std::fprintf(stderr, "bad --iterations: %s\n", v.c_str());
             } else if (value("--report-dir", v)) {
                 options.report_dir = v;
             } else if (value("--config", v)) {
@@ -101,7 +106,8 @@ Options:
                             Disable individual headless smoke paths.
   --config FILE             JSON config file (layered under CLI args).
   --help                    Show this message.
-)", program);
+)",
+                program);
 }
 
 } // namespace helios::app

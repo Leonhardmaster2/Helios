@@ -3,8 +3,8 @@
 #include "helios/vk/image.hpp"
 
 #include "helios/vk/buffer.hpp"
-#include "helios/vk/vma_allocator.hpp"
 #include "helios/vk/command.hpp"
+#include "helios/vk/vma_allocator.hpp"
 
 #include <volk.h>
 
@@ -34,11 +34,13 @@ core::Result<Image> Image::create(Device& device, VkExtent2D extent, VkFormat fo
 
     VkImage handle = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
-    handle = createImage(device.allocator(), VkExtent3D{extent.width, extent.height, 1}, format, usage,
-                         host_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
-                         handle, allocation);
+    handle =
+        createImage(device.allocator(), VkExtent3D{extent.width, extent.height, 1}, format, usage,
+                    host_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+                    handle, allocation);
     if (handle == VK_NULL_HANDLE) {
-        return core::makeError(core::ErrorCode::Vulkan, "image allocation failed: " + std::string(debug_name));
+        return core::makeError(core::ErrorCode::Vulkan,
+                               "image allocation failed: " + std::string(debug_name));
     }
     image.image_ = handle;
     image.allocation_ = allocation;
@@ -194,6 +196,25 @@ core::Result<void> Image::uploadFromHost(Device& device, void const* data, std::
         region.imageExtent = {extent_.width, extent_.height, 1};
         vkCmdCopyBufferToImage(cmd, staging.value().handle(), image_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                                &region);
+
+        // Back to GENERAL so the readback path can transition it again.
+        VkImageMemoryBarrier2 back{};
+        back.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        back.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        back.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        back.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        back.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+        back.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        back.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        back.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        back.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        back.image = image_;
+        back.subresourceRange = {aspect, 0, 1, 0, 1};
+        VkDependencyInfo dep_back{};
+        dep_back.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dep_back.imageMemoryBarrierCount = 1;
+        dep_back.pImageMemoryBarriers = &back;
+        vkCmdPipelineBarrier2(cmd, &dep_back);
     });
 }
 

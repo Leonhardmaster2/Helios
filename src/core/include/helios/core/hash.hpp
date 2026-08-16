@@ -16,7 +16,7 @@
 namespace helios::core {
 
 class Sha256 {
-public:
+  public:
     static constexpr std::size_t kDigestSize = 32;
 
     Sha256();
@@ -24,7 +24,7 @@ public:
     // Finalizes and returns the digest. The object must not be reused.
     [[nodiscard]] std::array<std::uint8_t, kDigestSize> finalize();
 
-private:
+  private:
     void transform(std::uint8_t const* block);
 
     std::uint32_t state_[8] = {};

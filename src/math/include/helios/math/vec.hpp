@@ -11,69 +11,73 @@
 
 namespace helios::math {
 
-template <typename T, std::size_t N>
-struct Vec {
+template <typename T, std::size_t N> struct Vec {
     T v[N]{};
 
-    constexpr T& operator[](std::size_t i) { return v[i]; }
-    constexpr T const& operator[](std::size_t i) const { return v[i]; }
+    constexpr T& operator[](std::size_t i) {
+        return v[i];
+    }
+    constexpr T const& operator[](std::size_t i) const {
+        return v[i];
+    }
 
     constexpr Vec operator+(Vec const& o) const {
         Vec r{};
-        for (std::size_t i = 0; i < N; ++i) r.v[i] = v[i] + o.v[i];
+        for (std::size_t i = 0; i < N; ++i)
+            r.v[i] = v[i] + o.v[i];
         return r;
     }
     constexpr Vec operator-(Vec const& o) const {
         Vec r{};
-        for (std::size_t i = 0; i < N; ++i) r.v[i] = v[i] - o.v[i];
+        for (std::size_t i = 0; i < N; ++i)
+            r.v[i] = v[i] - o.v[i];
         return r;
     }
     constexpr Vec operator*(T s) const {
         Vec r{};
-        for (std::size_t i = 0; i < N; ++i) r.v[i] = v[i] * s;
+        for (std::size_t i = 0; i < N; ++i)
+            r.v[i] = v[i] * s;
         return r;
     }
     constexpr Vec operator/(T s) const {
         Vec r{};
-        for (std::size_t i = 0; i < N; ++i) r.v[i] = v[i] / s;
+        for (std::size_t i = 0; i < N; ++i)
+            r.v[i] = v[i] / s;
         return r;
     }
     constexpr Vec& operator+=(Vec const& o) {
-        for (std::size_t i = 0; i < N; ++i) v[i] += o.v[i];
+        for (std::size_t i = 0; i < N; ++i)
+            v[i] += o.v[i];
         return *this;
     }
     constexpr Vec& operator-=(Vec const& o) {
-        for (std::size_t i = 0; i < N; ++i) v[i] -= o.v[i];
+        for (std::size_t i = 0; i < N; ++i)
+            v[i] -= o.v[i];
         return *this;
     }
 };
 
-template <typename T, std::size_t N>
-constexpr T dot(Vec<T, N> const& a, Vec<T, N> const& b) {
+template <typename T, std::size_t N> constexpr T dot(Vec<T, N> const& a, Vec<T, N> const& b) {
     T s{};
-    for (std::size_t i = 0; i < N; ++i) s += a.v[i] * b.v[i];
+    for (std::size_t i = 0; i < N; ++i)
+        s += a.v[i] * b.v[i];
     return s;
 }
 
-template <typename T, std::size_t N>
-constexpr T lengthSq(Vec<T, N> const& a) {
+template <typename T, std::size_t N> constexpr T lengthSq(Vec<T, N> const& a) {
     return dot(a, a);
 }
 
-template <typename T, std::size_t N>
-T length(Vec<T, N> const& a) {
+template <typename T, std::size_t N> T length(Vec<T, N> const& a) {
     return std::sqrt(lengthSq(a));
 }
 
-template <typename T, std::size_t N>
-Vec<T, N> normalized(Vec<T, N> const& a) {
+template <typename T, std::size_t N> Vec<T, N> normalized(Vec<T, N> const& a) {
     return a * (T{1} / length(a));
 }
 
-template <typename T>
-constexpr Vec<T, 3> cross(Vec<T, 3> const& a, Vec<T, 3> const& b) {
-    return Vec<T, 3>{a.v[1] * b.v[2] - a.v[2] * b.v[1],
-                     a.v[2] * b.v[0] - a.v[0] * b.v[2],
+template <typename T> constexpr Vec<T, 3> cross(Vec<T, 3> const& a, Vec<T, 3> const& b) {
+    return Vec<T, 3>{a.v[1] * b.v[2] - a.v[2] * b.v[1], a.v[2] * b.v[0] - a.v[0] * b.v[2],
                      a.v[0] * b.v[1] - a.v[1] * b.v[0]};
 }
 

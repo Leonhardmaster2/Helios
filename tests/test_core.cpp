@@ -51,8 +51,20 @@ TEST_CASE("sha256 NIST vectors") {
     CHECK(sha256Hex("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     // Two-block message (exactly 56 bytes) — NIST FIPS 180-4 vector.
     // Built from chunks to avoid transcription errors.
-    const std::string two_block = "abcd" "bcde" "cdef" "defg" "efgh" "fghi" "ghij" "hijk"
-                                  "ijkl" "jklm" "klmn" "lmno" "mnop" "nopq";
+    const std::string two_block = "abcd"
+                                  "bcde"
+                                  "cdef"
+                                  "defg"
+                                  "efgh"
+                                  "fghi"
+                                  "ghij"
+                                  "hijk"
+                                  "ijkl"
+                                  "jklm"
+                                  "klmn"
+                                  "lmno"
+                                  "mnop"
+                                  "nopq";
     CHECK(two_block.size() == 56);
     CHECK(sha256Hex(two_block) == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
     // "a" x 1,000,000
@@ -74,8 +86,8 @@ TEST_CASE("sha256 NIST vectors") {
 }
 
 TEST_CASE("config layered parsing") {
-    const std::vector<std::string> cli = {"--headless-smoke", "--width=640", "--frames", "120",
-                                          "--flag-only", "--ratio=0.5", "--name=hello"};
+    const std::vector<std::string> cli = {"--headless-smoke", "--width=640", "--frames",    "120",
+                                          "--flag-only",      "--ratio=0.5", "--name=hello"};
     auto cfg = Config::load("", cli);
     REQUIRE(cfg.ok());
     CHECK(cfg.value().getBool("headless-smoke", false).value());

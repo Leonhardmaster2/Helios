@@ -17,12 +17,18 @@ namespace helios::core {
 
 std::string_view toString(LogLevel level) noexcept {
     switch (level) {
-    case LogLevel::Trace: return "trace";
-    case LogLevel::Debug: return "debug";
-    case LogLevel::Info: return "info";
-    case LogLevel::Warn: return "warn";
-    case LogLevel::Error: return "error";
-    case LogLevel::Off: return "off";
+    case LogLevel::Trace:
+        return "trace";
+    case LogLevel::Debug:
+        return "debug";
+    case LogLevel::Info:
+        return "info";
+    case LogLevel::Warn:
+        return "warn";
+    case LogLevel::Error:
+        return "error";
+    case LogLevel::Off:
+        return "off";
     }
     return "unknown";
 }
@@ -69,12 +75,18 @@ void Log::setLogFile(std::string_view path) {
 namespace {
 constexpr const char* kLevelColor(LogLevel level) {
     switch (level) {
-    case LogLevel::Trace: return "\x1b[90m"; // bright black
-    case LogLevel::Debug: return "\x1b[36m"; // cyan
-    case LogLevel::Info: return "\x1b[32m";  // green
-    case LogLevel::Warn: return "\x1b[33m";  // yellow
-    case LogLevel::Error: return "\x1b[31m"; // red
-    default: return "";
+    case LogLevel::Trace:
+        return "\x1b[90m"; // bright black
+    case LogLevel::Debug:
+        return "\x1b[36m"; // cyan
+    case LogLevel::Info:
+        return "\x1b[32m"; // green
+    case LogLevel::Warn:
+        return "\x1b[33m"; // yellow
+    case LogLevel::Error:
+        return "\x1b[31m"; // red
+    default:
+        return "";
     }
 }
 } // namespace
@@ -95,8 +107,8 @@ void Log::log(LogLevel level, std::string_view message, std::source_location loc
     char ts[32] = {};
     std::strftime(ts, sizeof(ts), "%H:%M:%S", &tm);
 
-    std::string line = std::format("{} [{:5}] {} ({}:{})\n", ts, toString(level), message,
-                                   loc.file_name(), loc.line());
+    std::string line =
+        std::format("{} [{:5}] {} ({}:{})\n", ts, toString(level), message, loc.file_name(), loc.line());
 
     std::lock_guard lock(mutex_);
     if (use_color_) {

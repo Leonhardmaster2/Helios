@@ -23,7 +23,8 @@ TEST_CASE("device report serialization") {
     report.depth_choice = helios::vk::DepthFormatChoice::D32Sfloat;
     report.depth_choice_name = "D32_SFLOAT";
     report.used_queue_family = 0;
-    report.queue_families.push_back({0, 1, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
+    report.queue_families.push_back({0, 1,
+                                     VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
                                      true, true, true, true, 64});
     report.selection_reason = "test";
 

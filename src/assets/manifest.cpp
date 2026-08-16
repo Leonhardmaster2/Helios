@@ -15,19 +15,35 @@ namespace fs = std::filesystem;
 
 std::string_view toString(DataClass cls) noexcept {
     switch (cls) {
-    case DataClass::Measured: return "measured";
-    case DataClass::ModelDerived: return "model-derived";
-    case DataClass::Procedural: return "procedural";
-    case DataClass::Display: return "display";
+    case DataClass::Measured:
+        return "measured";
+    case DataClass::ModelDerived:
+        return "model-derived";
+    case DataClass::Procedural:
+        return "procedural";
+    case DataClass::Display:
+        return "display";
     }
     return "unknown";
 }
 
 bool fromString(std::string_view s, DataClass& out) noexcept {
-    if (s == "measured") { out = DataClass::Measured; return true; }
-    if (s == "model-derived") { out = DataClass::ModelDerived; return true; }
-    if (s == "procedural") { out = DataClass::Procedural; return true; }
-    if (s == "display") { out = DataClass::Display; return true; }
+    if (s == "measured") {
+        out = DataClass::Measured;
+        return true;
+    }
+    if (s == "model-derived") {
+        out = DataClass::ModelDerived;
+        return true;
+    }
+    if (s == "procedural") {
+        out = DataClass::Procedural;
+        return true;
+    }
+    if (s == "display") {
+        out = DataClass::Display;
+        return true;
+    }
     return false;
 }
 
@@ -100,9 +116,9 @@ core::Result<AssetManifest> AssetManifest::fromJson(nlohmann::json const& json) 
         auto size = e.find("size_bytes");
         auto cls = e.find("class");
         auto role = e.find("role");
-        if (path == e.end() || !path->is_string() || sha == e.end() || !sha->is_string() ||
-            size == e.end() || !size->is_number_unsigned() || cls == e.end() || !cls->is_string() ||
-            role == e.end() || !role->is_string()) {
+        if (path == e.end() || !path->is_string() || sha == e.end() || !sha->is_string() || size == e.end() ||
+            !size->is_number_unsigned() || cls == e.end() || !cls->is_string() || role == e.end() ||
+            !role->is_string()) {
             return core::makeError(core::ErrorCode::CorruptData, "asset manifest: malformed entry");
         }
         entry.path = path->get<std::string>();
@@ -114,7 +130,8 @@ core::Result<AssetManifest> AssetManifest::fromJson(nlohmann::json const& json) 
         }
         entry.role = role->get<std::string>();
         if (entry.sha256.size() != 64) {
-            return core::makeError(core::ErrorCode::CorruptData, "asset manifest: sha256 must be 64 hex chars");
+            return core::makeError(core::ErrorCode::CorruptData,
+                                   "asset manifest: sha256 must be 64 hex chars");
         }
         auto gen = e.find("generator");
         if (gen != e.end() && gen->is_string()) {

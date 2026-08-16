@@ -18,25 +18,25 @@ struct SDL_Window;
 namespace helios::render {
 
 struct RendererCreateInfo {
-    SDL_Window* window = nullptr;   // opaque surface source
+    SDL_Window* window = nullptr; // opaque surface source
     std::uint32_t width = 1280;
     std::uint32_t height = 720;
     bool enable_validation = true;
     bool enable_imgui = true;
-    std::string shader_dir;         // where compiled .spv files live
-    std::string pipeline_cache_file; // optional persistent pipeline cache
-    std::uint32_t max_frames = 0;   // 0 = run until window closes
+    std::string shader_dir;                  // where compiled .spv files live
+    std::string pipeline_cache_file;         // optional persistent pipeline cache
+    std::uint32_t max_frames = 0;            // 0 = run until window closes
     std::uint32_t swapchain_image_count = 2; // frames in flight
 };
 
 struct RendererStats {
-    core::FrameStats cpu_frame_ms;   // CPU time per rendered frame
-    core::FrameStats gpu_frame_ms;   // GPU time (timestamp queries)
+    core::FrameStats cpu_frame_ms; // CPU time per rendered frame
+    core::FrameStats gpu_frame_ms; // GPU time (timestamp queries)
     std::uint64_t presented_frames = 0;
 };
 
 class Renderer {
-public:
+  public:
     ~Renderer();
     Renderer(Renderer const&) = delete;
     Renderer& operator=(Renderer const&) = delete;
@@ -47,7 +47,9 @@ public:
     // (window closed, max_frames reached, device loss).
     [[nodiscard]] bool renderFrame();
 
-    [[nodiscard]] RendererStats const& stats() const noexcept { return stats_; }
+    [[nodiscard]] RendererStats const& stats() const noexcept {
+        return stats_;
+    }
 
     // JSON device report (for the capability report file).
     [[nodiscard]] std::string deviceReportJson() const;
@@ -65,17 +67,25 @@ public:
         std::string depth_choice;
         std::string note; // e.g. benchmark mode
     };
-    void setDebugUiFrame(DebugUiFrame frame) { debug_ui_frame_ = frame; }
+    void setDebugUiFrame(DebugUiFrame frame) {
+        debug_ui_frame_ = frame;
+    }
 
     // Validation-layer stats since creation.
     [[nodiscard]] std::uint32_t validationErrorCount() const;
     [[nodiscard]] std::uint32_t validationWarningCount() const;
 
-    [[nodiscard]] std::string const& deviceName() const noexcept { return device_name_; }
-    [[nodiscard]] std::uint32_t width() const noexcept { return width_; }
-    [[nodiscard]] std::uint32_t height() const noexcept { return height_; }
+    [[nodiscard]] std::string const& deviceName() const noexcept {
+        return device_name_;
+    }
+    [[nodiscard]] std::uint32_t width() const noexcept {
+        return width_;
+    }
+    [[nodiscard]] std::uint32_t height() const noexcept {
+        return height_;
+    }
 
-private:
+  private:
     Renderer() = default;
     void drawDebugUi();
     struct Impl;

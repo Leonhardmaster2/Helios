@@ -25,7 +25,9 @@ constexpr std::uint32_t kK[64] = {
     0x19a4c116U, 0x1e376c08U, 0x2748774cU, 0x34b0bcb5U, 0x391c0cb3U, 0x4ed8aa4aU, 0x5b9cca4fU, 0x682e6ff3U,
     0x748f82eeU, 0x78a5636fU, 0x84c87814U, 0x8cc70208U, 0x90befffaU, 0xa4506cebU, 0xbef9a3f7U, 0xc67178f2U};
 
-inline std::uint32_t rotr(std::uint32_t x, unsigned n) { return (x >> n) | (x << (32U - n)); }
+inline std::uint32_t rotr(std::uint32_t x, unsigned n) {
+    return (x >> n) | (x << (32U - n));
+}
 } // namespace
 
 Sha256::Sha256() {

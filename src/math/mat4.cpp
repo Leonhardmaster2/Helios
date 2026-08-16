@@ -25,9 +25,15 @@ Mat4f lookAt(Vec3f const& eye, Vec3f const& center, Vec3f const& up) {
     const Vec3f s = normalized(cross(f, up));
     const Vec3f u = cross(s, f);
     Mat4f r = Mat4f::identity();
-    r.m[0][0] = s.v[0]; r.m[1][0] = s.v[1]; r.m[2][0] = s.v[2];
-    r.m[0][1] = u.v[0]; r.m[1][1] = u.v[1]; r.m[2][1] = u.v[2];
-    r.m[0][2] = -f.v[0]; r.m[1][2] = -f.v[1]; r.m[2][2] = -f.v[2];
+    r.m[0][0] = s.v[0];
+    r.m[1][0] = s.v[1];
+    r.m[2][0] = s.v[2];
+    r.m[0][1] = u.v[0];
+    r.m[1][1] = u.v[1];
+    r.m[2][1] = u.v[2];
+    r.m[0][2] = -f.v[0];
+    r.m[1][2] = -f.v[1];
+    r.m[2][2] = -f.v[2];
     r.m[3][0] = -dot(s, eye);
     r.m[3][1] = -dot(u, eye);
     r.m[3][2] = dot(f, eye);
@@ -37,24 +43,30 @@ Mat4f lookAt(Vec3f const& eye, Vec3f const& center, Vec3f const& up) {
 Mat4f rotationX(float radians) {
     const float c = std::cos(radians), s = std::sin(radians);
     Mat4f r = Mat4f::identity();
-    r.m[1][1] = c; r.m[2][1] = -s;
-    r.m[1][2] = s; r.m[2][2] = c;
+    r.m[1][1] = c;
+    r.m[2][1] = -s;
+    r.m[1][2] = s;
+    r.m[2][2] = c;
     return r;
 }
 
 Mat4f rotationY(float radians) {
     const float c = std::cos(radians), s = std::sin(radians);
     Mat4f r = Mat4f::identity();
-    r.m[0][0] = c; r.m[2][0] = s;
-    r.m[0][2] = -s; r.m[2][2] = c;
+    r.m[0][0] = c;
+    r.m[2][0] = s;
+    r.m[0][2] = -s;
+    r.m[2][2] = c;
     return r;
 }
 
 Mat4f rotationZ(float radians) {
     const float c = std::cos(radians), s = std::sin(radians);
     Mat4f r = Mat4f::identity();
-    r.m[0][0] = c; r.m[1][0] = -s;
-    r.m[0][1] = s; r.m[1][1] = c;
+    r.m[0][0] = c;
+    r.m[1][0] = -s;
+    r.m[0][1] = s;
+    r.m[1][1] = c;
     return r;
 }
 
