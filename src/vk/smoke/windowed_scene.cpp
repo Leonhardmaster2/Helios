@@ -68,10 +68,11 @@ WindowedSmokeScene::create(Device& device, VkFormat color_format, VkFormat depth
     impl->depth_vs = std::move(dep_vs.value());
     impl->depth_fs = std::move(dep_fs.value());
 
-    auto ubo_layout = DescriptorSetLayout::create(
-        device, {{{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}}},
-        "win-ubo-layout");
+    auto ubo_layout =
+        DescriptorSetLayout::create(device,
+                                    {{{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}}},
+                                    "win-ubo-layout");
     if (ubo_layout.failed())
         return ubo_layout.error();
     impl->ubo_layout = std::move(ubo_layout.value());
@@ -144,7 +145,9 @@ WindowedSmokeScene::create(Device& device, VkFormat color_format, VkFormat depth
     tri_data.mvp[5] = 1.0f;
     tri_data.mvp[10] = 1.0f;
     tri_data.mvp[15] = 1.0f;
-    impl->triangle_ubo.upload(&tri_data, sizeof(tri_data));
+    if (impl->triangle_ubo.upload(&tri_data, sizeof(tri_data)).failed()) {
+        return core::makeError(core::ErrorCode::Internal, "triangle UBO upload failed");
+    }
 
     shaders::DepthParams dep_data{};
     dep_data.quads[0] = {-0.55f, 0.0f, 0.15f, 0.22f};
@@ -153,7 +156,9 @@ WindowedSmokeScene::create(Device& device, VkFormat color_format, VkFormat depth
     dep_data.colors[0] = {1.0f, 0.2f, 0.2f, 1.0f};
     dep_data.colors[1] = {0.2f, 1.0f, 0.2f, 1.0f};
     dep_data.colors[2] = {0.2f, 0.2f, 1.0f, 1.0f};
-    impl->depth_ubo.upload(&dep_data, sizeof(dep_data));
+    if (impl->depth_ubo.upload(&dep_data, sizeof(dep_data)).failed()) {
+        return core::makeError(core::ErrorCode::Internal, "depth UBO upload failed");
+    }
 
     VkDescriptorBufferInfo tri_info{impl->triangle_ubo.handle(), 0, sizeof(shaders::TriangleUbo)};
     VkWriteDescriptorSet tri_write{};

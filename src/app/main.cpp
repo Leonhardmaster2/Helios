@@ -7,17 +7,21 @@
 #include "helios/core/log.hpp"
 #include "helios/version.hpp"
 
+#include <SDL3/SDL.h>
 #include <cstdio>
 #include <cstdlib>
-#include <SDL3/SDL.h>
 
 #ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+// clang-format off
+// windows.h must precede dbghelp.h (MSVC C3646 otherwise); clang-format
+// wants them alphabetically, so this block is exempt.
 #include <windows.h>
 #include <dbghelp.h>
 #pragma comment(lib, "dbghelp.lib")
+// clang-format on
 
 // Crash diagnostic: exception code/address plus a symbolized stack trace
 // (dbghelp reads the PDB next to the executable).
@@ -69,7 +73,8 @@ int main(int argc, char** argv) {
             if (r2 == 0) {
                 SDL_Window* w = SDL_CreateWindow("helios-probe", 64, 64, 0);
                 std::fprintf(stderr, "sdl-probe: CreateWindow = %p, err=[%s]\n", (void*)w, SDL_GetError());
-                if (w) SDL_DestroyWindow(w);
+                if (w)
+                    SDL_DestroyWindow(w);
             }
             SDL_Quit();
             return 0;

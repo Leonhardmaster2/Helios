@@ -5,21 +5,15 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $clangFormat = Get-Command clang-format -ErrorAction SilentlyContinue
 if (-not $clangFormat) {
-  Write-Host "clang-format not found in PATH; install LLVM or use scripts/fetch_tools.mjs" -ForegroundColor Yellow
+  Write-Host "clang-format not found in PATH; install LLVM (>= 16)"
   exit 2
 }
-$files = Get-ChildItem -Path (Join-Path $root "src") -Recurse -Include *.hpp,*.cpp,*.h |
+$files = Get-ChildItem -Path (Join-Path $root "src"), (Join-Path $root "tests") -Recurse -Include *.hpp,*.cpp,*.h |
   Where-Object { $_.FullName -notmatch "third_party" }
 $dirty = @()
 foreach ($f in $files) {
-  $tmp = [System.IO.Path]::GetTempFileName()
-  & $clangFormat.Source -style=file $f.FullName | Out-File -Encoding utf8 $tmp
-  if (-not (Compare-Object (Get-Content $f.FullName) (Get-Content $tmp))) {
-    Remove-Item $tmp -Force
-    continue
-  }
-  $dirty += $f.FullName
-  Remove-Item $tmp -Force
+  & $clangFormat.Source -style=file --dry-run --Werror $f.FullName 2>&1 | Out-Null
+  if ($LASTEXITCODE -ne 0) { $dirty += $f.FullName }
 }
 if ($dirty.Count -gt 0) {
   Write-Host "Formatting violations:"

@@ -7,7 +7,9 @@
 #include "helios/core/log.hpp"
 
 #include <algorithm>
+#pragma warning(push, 3) // third-party VMA header: suppress /W4 noise
 #include <vk_mem_alloc.h>
+#pragma warning(pop)
 #include <volk.h>
 
 namespace helios::vk {

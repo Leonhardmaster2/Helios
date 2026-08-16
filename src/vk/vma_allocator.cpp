@@ -7,8 +7,10 @@
 #define VMA_IMPLEMENTATION
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
-#include <volk.h>
+#pragma warning(push, 3) // third-party VMA header: suppress /W4 noise
 #include "helios/vk/vma_allocator.hpp"
+#pragma warning(pop)
+#include <volk.h>
 
 #include "helios/core/log.hpp"
 

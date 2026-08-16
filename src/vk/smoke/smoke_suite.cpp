@@ -86,8 +86,8 @@ void transitionImage(VkCommandBuffer cmd, VkImage image, VkImageLayout old_layou
 }
 
 // Renders the depth probes into the given color+depth attachments.
-void recordDepthProbes(Device& device, VkCommandBuffer cmd, VkPipeline pipeline, VkPipelineLayout layout,
-                       VkDescriptorSet set, VkExtent2D extent, VkImageView color_view, VkImageView depth_view) {
+void recordDepthProbes(VkCommandBuffer cmd, VkPipeline pipeline, VkPipelineLayout layout, VkDescriptorSet set,
+                       VkExtent2D extent, VkImageView color_view, VkImageView depth_view) {
     VkRenderingAttachmentInfo color{};
     color.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
     color.imageView = color_view;
@@ -189,10 +189,11 @@ core::Result<std::unique_ptr<HeadlessSmoke>> HeadlessSmoke::create(Instance& /*i
     shared->triangle_fs = std::move(tri_fs.value());
 
     // Used by vertex AND fragment stages (triangle fs, depth fs read params).
-    auto ubo_layout = DescriptorSetLayout::create(
-        device, {{{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}}},
-        "smoke-ubo-layout");
+    auto ubo_layout =
+        DescriptorSetLayout::create(device,
+                                    {{{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+                                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}}},
+                                    "smoke-ubo-layout");
     if (ubo_layout.failed())
         return ubo_layout.error();
     shared->ubo_layout = std::move(ubo_layout.value());
@@ -354,8 +355,8 @@ SmokePathResult HeadlessSmoke::runClear() {
         const int expect_g = static_cast<int>(kClear[1] * 255.0f + 0.5f);
         const int expect_b = static_cast<int>(kClear[2] * 255.0f + 0.5f);
         const int expect_a = static_cast<int>(kClear[3] * 255.0f + 0.5f);
-        if (!near_u8(data[i], expect_r) || !near_u8(data[i + 1], expect_g) || !near_u8(data[i + 2], expect_b) ||
-            !near_u8(data[i + 3], expect_a)) {
+        if (!near_u8(data[i], expect_r) || !near_u8(data[i + 1], expect_g) ||
+            !near_u8(data[i + 2], expect_b) || !near_u8(data[i + 3], expect_a)) {
             all_match = false;
             if (++mismatches > 8)
                 break;
@@ -488,7 +489,10 @@ SmokePathResult HeadlessSmoke::runTriangle() {
                                    std::abs(static_cast<int>(px[i + 2]) - 20) <= 3;
                 if (!is_bg) {
                     ++non_bg;
-                    if (first_x < 0) { first_x = static_cast<int>(x); first_y = static_cast<int>(y); }
+                    if (first_x < 0) {
+                        first_x = static_cast<int>(x);
+                        first_y = static_cast<int>(y);
+                    }
                 }
             }
         }
@@ -583,8 +587,8 @@ SmokePathResult HeadlessSmoke::runDepth() {
                         0, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
                         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
         // Draw far -> mid -> near with GREATER test: near wins where overlapping.
-        recordDepthProbes(*device_, cmd, shared_->depth_pipeline.handle(), shared_->depth_layout.handle(),
-                          set.value(), extent, context_->colorView(), context_->depthView());
+        recordDepthProbes(cmd, shared_->depth_pipeline.handle(), shared_->depth_layout.handle(), set.value(),
+                          extent, context_->colorView(), context_->depthView());
         transitionImage(cmd, context_->colorImage().handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,

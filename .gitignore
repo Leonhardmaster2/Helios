@@ -17,6 +17,8 @@ perf_run*.txt
 smoke_*.txt
 configure.log
 build.log
+*_cfg.log
+*_build.log
 
 # Generated dependency-cache wiring
 cmake/deps-cache.cmake

@@ -81,7 +81,6 @@ int runWindowed(CliOptions const& options) {
     OrbitCamera camera;
     bool running = true;
     std::uint64_t frame_count = 0;
-    bool show_help = true;
     bool fullscreen = false;
     double last_cpu_ms = 0.0, last_gpu_ms = 0.0;
 

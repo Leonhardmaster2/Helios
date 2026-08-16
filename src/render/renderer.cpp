@@ -519,7 +519,9 @@ bool Renderer::renderFrame() {
         SDL_Window* win = impl.window;
         int w = 0, h = 0;
         SDL_GetWindowSizeInPixels(win, &w, &h);
-        impl.swapchain->recreate(static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h));
+        if (impl.swapchain->recreate(static_cast<std::uint32_t>(w), static_cast<std::uint32_t>(h)).failed()) {
+            core::logError("swapchain recreation failed");
+        }
         impl.width = impl.swapchain->info().extent.width;
         impl.height = impl.swapchain->info().extent.height;
     }
