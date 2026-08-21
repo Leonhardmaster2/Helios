@@ -481,26 +481,24 @@ int runPrecisionLab(CliOptions const& options) {
             core::logError("scene assembler setup failed");
             return 2;
         }
+        // Camera stored IN the body frame 100 m above the surface; landmark
+        // body-fixed 150 m up: exercises the snapshot-backed storage-frame
+        // subtraction path end to end.
         render::SceneAssemblerInput in;
-        in.camera.position = math::BarycentricPosition{
-            rootFrameId(), body_to_root.value().rotation.rotate(Vec3d{kBodyRadius + 100.0, 0, 0}) +
-                               body_to_root.value().translation};
+        in.storage_frame = kBody;
+        in.camera_position = Vec3d{kBodyRadius + 100.0, 0.0, 0.0};
         in.max_near_distance_m = 1.0e9;
-        in.near_origins.push_back(math::BarycentricPosition{
-            rootFrameId(), body_to_root.value().rotation.rotate(Vec3d{kBodyRadius + 150.0, 0, 0}) +
-                               body_to_root.value().translation});
+        in.near_body_fixed.push_back(math::BodyFixedPosition{kBody, Vec3d{kBodyRadius + 150.0, 0.0, 0.0}});
         auto scene = assembler.value().assemble(epoch_snap.value(), in);
         if (scene.failed()) {
             core::logError("scene assembly failed: {}", scene.error().to_string());
             return 2;
         }
-        // Records are in storage (root) axes: the body spin rotates the
-        // 50 m body-local offset. Compare against the analytic expectation.
-        const Vec3d expected_offset = body_to_root.value().rotation.rotate(Vec3d{50.0, 0.0, 0.0});
-        assembler_local_err = length(math::Vec3d{scene.value().near_records[0].offset_m.v[0],
-                                                 scene.value().near_records[0].offset_m.v[1],
-                                                 scene.value().near_records[0].offset_m.v[2]} -
-                                     expected_offset);
+        // Same-frame difference: exactly the 50 m body-local offset.
+        const math::Vec3d got{scene.value().near_records[0].offset_m.v[0],
+                              scene.value().near_records[0].offset_m.v[1],
+                              scene.value().near_records[0].offset_m.v[2]};
+        assembler_local_err = length(got - Vec3d{50.0, 0.0, 0.0});
     }
     core::logInfo("scene-assembly near-offset error at surface scale: {:e} m", assembler_local_err);
 
