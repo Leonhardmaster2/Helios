@@ -1,12 +1,12 @@
 {
   "cpu_frame_ms": {
-    "average_ms": 1.1736854166666675,
+    "average_ms": 0.5233112500000008,
     "frame_count": 240,
-    "max_ms": 30.7568,
-    "min_ms": 0.312,
-    "p50_ms": 0.7057,
-    "p95_ms": 3.4877,
-    "p99_ms": 6.004
+    "max_ms": 9.3401,
+    "min_ms": 0.2897,
+    "p50_ms": 0.4104,
+    "p95_ms": 0.797,
+    "p99_ms": 0.9899
   },
   "environment": {
     "build_type": "RelWithDebInfo",
@@ -16,25 +16,25 @@
     "dependency_lock_hash": "0bceba7a04ce3a9259f98a83fe33e100ef107d9ed5ebb3638901682e0d44c67d",
     "driver_version": "queried-at-runtime",
     "gpu_name": "NVIDIA GeForce RTX 5080",
-    "helios_git_hash": "3dd20085ab5d863b82d169b453216ef59a58eb50",
+    "helios_git_hash": "d9e912ee555b70221921589103a609df074017cb",
     "helios_version": "0.1.0",
     "os_name": "Windows 10.0 (build 26200)",
     "quality_preset": "balanced",
     "resolution": "1280x720",
     "slang_version": "slangc C:/Users/leonh/Documents/Helios/.deps-cache/slang-windows-x64/bin/slangc.exe:\n2026.14.1",
-    "timestamp_utc": "2026-08-21T16:06:56Z",
+    "timestamp_utc": "2026-08-21T18:42:12Z",
     "validation_layers": "enabled"
   },
   "extras": null,
   "format": "helios-performance-report",
   "gpu_frame_ms": {
-    "average_ms": 0.007448739495798323,
+    "average_ms": 0.0068562016806722696,
     "frame_count": 238,
-    "max_ms": 0.030976,
-    "min_ms": 0.004704,
-    "p50_ms": 0.006656,
-    "p95_ms": 0.01168,
-    "p99_ms": 0.012544
+    "max_ms": 0.012128,
+    "min_ms": 0.005728,
+    "p50_ms": 0.006208,
+    "p95_ms": 0.008352,
+    "p99_ms": 0.011104
   },
   "schema_version": 1
 }
