@@ -4,6 +4,7 @@
 
 #include "helios/core/error.hpp"
 #include "helios/vk/device.hpp"
+#include "helios/vk/sync.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -15,6 +16,7 @@ struct FrameContext {
     VkCommandBuffer cmd = VK_NULL_HANDLE;
     VkSemaphore image_available = VK_NULL_HANDLE; // acquire -> submit
     VkFence in_flight = VK_NULL_HANDLE;           // submit completion
+    vk::QueryPool timestamps;                     // 2 queries: begin/end of GPU frame work
     bool submitted = false;
 };
 // Render-finished semaphores are indexed by SWAPCHAIN IMAGE (not frame

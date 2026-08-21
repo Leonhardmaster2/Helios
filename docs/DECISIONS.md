@@ -329,3 +329,28 @@ available (see Remaining M0 work).
 
 **Revisit if:** M6 validation shows the candidate region's voids or datum
 conversion exceed the accepted error budget.
+
+## D-021 — Frame-tagged type API: checked same-frame difference, no implicit cross-kind operations
+
+**Status:** Accepted · **Date:** 2026-08-21 · **Validate:** M1
+
+**Decision:** `helios_math` implements the M1 coordinate types as
+`Position<KindTag>` (compile-time kind tag + runtime `FrameId`) with no
+implicit conversions and no operator arithmetic between positions. The only
+cross-position operation is `differenceTo()`, which returns a
+`Result<Vec3d>` and fails with `InvalidArgument` when the runtime frame IDs
+differ; translation is explicit (`displacedBy`). Orientations use
+double-precision quaternions (`Quatd`); float32 appears only at the render
+boundary. `helios_universe` publishes immutable `FrameSnapshot`s from an
+abstract `FrameProvider`; M1 ships synthetic static/rotating providers with
+all frames as direct children of the barycentric root, behind the same
+consumer API that M7's real rotation models will implement.
+
+**Why:** follows D-001 and ARCHITECTURE.md "Coordinates and precision".
+Compile-time tags make cross-kind arithmetic a type error; the runtime
+checked difference catches Earth-fixed vs Mars-fixed misuse that shares one
+C++ kind. Result-based errors match the project's no-exceptions convention.
+
+**Revisit if:** M1's transform-error/jitter evidence shows the checked API
+is too costly in hot loops, or M7's real hierarchies need parent-relative
+transforms that the flat snapshot shape cannot express.

@@ -50,10 +50,23 @@ core::Result<FrameContext> createFrameContext(helios::vk::Device& device, std::s
     }
     device.setDebugName(VK_OBJECT_TYPE_FENCE, reinterpret_cast<std::uint64_t>(frame.in_flight),
                         prefix + "-in-flight");
+
+    // Per-frame timestamp pool: with more than one frame in flight a shared
+    // pool would be reset while the previous frame's queries may still be
+    // executing on the GPU.
+    auto timestamps = vk::QueryPool::create(device, VK_QUERY_TYPE_TIMESTAMP, 2, prefix + "-timestamps");
+    if (timestamps.failed()) {
+        vkDestroyCommandPool(device.handle(), frame.pool, nullptr);
+        return core::makeError(core::ErrorCode::Vulkan, "timestamp query pool creation failed");
+    }
+    frame.timestamps = std::move(timestamps.value());
     return frame;
 }
 
 void destroyFrameContext(helios::vk::Device& device, FrameContext& frame) {
+    // RAII members holding device objects must be released while the device
+    // is still alive (destruction order matters!).
+    frame.timestamps = vk::QueryPool{};
     if (frame.pool != VK_NULL_HANDLE) {
         vkDestroyCommandPool(device.handle(), frame.pool, nullptr);
         frame.pool = VK_NULL_HANDLE;

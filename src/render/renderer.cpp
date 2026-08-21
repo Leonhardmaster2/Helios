@@ -16,7 +16,6 @@
 #include "helios/vk/swapchain.hpp"
 #include "helios/vk/sync.hpp"
 
-#include <array>
 #include <cstring>
 #include <filesystem>
 #include <vector>
@@ -51,7 +50,6 @@ struct Renderer::Impl {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     std::unique_ptr<vk::smoke::WindowedSmokeScene> scene;
     std::vector<FrameContext> frames;
-    std::uint32_t frame_index = 0; // current in-flight slot
     std::uint32_t width = 0;
     std::uint32_t height = 0;
     bool validation_enabled = false;
@@ -60,10 +58,6 @@ struct Renderer::Impl {
     std::uint32_t max_frames = 0;
     std::uint64_t frame_count = 0;
     DepthImage depth;
-    // GPU timing
-    vk::QueryPool timestamp_pool;
-    std::array<std::uint64_t, 4> timestamp_values{};
-    std::uint32_t timestamps_ready = 0;
     // ImGui Vulkan init
     VkDescriptorPool imgui_pool = VK_NULL_HANDLE;
     VkFormat swapchain_format = VK_FORMAT_UNDEFINED;
@@ -270,12 +264,8 @@ core::Result<std::unique_ptr<Renderer>> Renderer::create(RendererCreateInfo cons
         impl->frames.push_back(std::move(frame.value()));
     }
 
-    // GPU frame timing pool.
-    auto timestamps = vk::QueryPool::create(*impl->device, VK_QUERY_TYPE_TIMESTAMP, 4, "frame-timestamps");
-    if (timestamps.failed()) {
-        return timestamps.error();
-    }
-    impl->timestamp_pool = std::move(timestamps.value());
+    // GPU frame timing: each FrameContext owns its own 2-query timestamp
+    // pool (see frame.cpp).
 
     // Smoke scene (windowed).
     auto scene = vk::smoke::WindowedSmokeScene::create(*impl->device, impl->swapchain_format,
@@ -334,7 +324,6 @@ Renderer::~Renderer() {
         }
         // RAII members that hold device objects must be released while the
         // device is still alive (destruction order matters!).
-        impl_->timestamp_pool = vk::QueryPool{};
         impl_->depth.image = vk::Image{};
 #ifdef HELIOS_ENABLE_IMGUI
         if (impl_->imgui_initialized) {
@@ -366,12 +355,32 @@ bool Renderer::renderFrame() {
     }
 
     const core::Clock::time_point frame_start = core::Clock::now();
-    FrameContext& frame = impl.frames[impl.frame_index % impl.frames.size()];
+    // Rotate through the in-flight slots: while slot N's previous submit is
+    // still executing, the CPU can record and submit frame N+1.
+    FrameContext& frame = impl.frames[impl.frame_count % impl.frames.size()];
 
     // Wait for the previous use of this frame slot.
     if (vkWaitForFences(impl.device->handle(), 1, &frame.in_flight, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
         core::logError("fence wait failed");
         return false;
+    }
+
+    // The slot's previous submit has completed: its GPU timestamps are
+    // available. Read them back, then host-reset the pool before this
+    // frame's command buffer writes new queries into it (the pool is also
+    // reset on first use so no query is ever written while uninitialized).
+    if (frame.timestamps.handle() != VK_NULL_HANDLE) {
+        if (frame.submitted) {
+            std::vector<std::uint64_t> values;
+            if (frame.timestamps.getResults(0, 2, values).ok()) {
+                const float period = impl.device->timestampPeriodNanos();
+                const double gpu_ms = static_cast<double>(values[1] - values[0]) * period / 1e6;
+                stats_.gpu_frame_ms.add(gpu_ms);
+            }
+        }
+        if (frame.timestamps.reset(0, 2).failed()) {
+            core::logError("timestamp pool reset failed");
+        }
     }
     // Acquire next swapchain image. The fence tracks only the queue submit;
     // the acquire is synchronized via the image-available semaphore (one
@@ -448,10 +457,9 @@ bool Renderer::renderFrame() {
     dep2.pImageMemoryBarriers = &to_depth;
     vkCmdPipelineBarrier2(frame.cmd, &dep2);
 
-    // GPU timestamps: begin.
-    if (impl.timestamp_pool.handle() != VK_NULL_HANDLE) {
-        vkCmdResetQueryPool(frame.cmd, impl.timestamp_pool.handle(), 0, 2);
-        vkCmdWriteTimestamp2(frame.cmd, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, impl.timestamp_pool.handle(), 0);
+    // GPU timestamps: begin (per-frame pool, already host-reset above).
+    if (frame.timestamps.handle() != VK_NULL_HANDLE) {
+        vkCmdWriteTimestamp2(frame.cmd, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, frame.timestamps.handle(), 0);
     }
 
     VkRenderingAttachmentInfo color{};
@@ -515,9 +523,8 @@ bool Renderer::renderFrame() {
 #endif
 
     // GPU timestamps: end.
-    if (impl.timestamp_pool.handle() != VK_NULL_HANDLE) {
-        vkCmdWriteTimestamp2(frame.cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, impl.timestamp_pool.handle(),
-                             1);
+    if (frame.timestamps.handle() != VK_NULL_HANDLE) {
+        vkCmdWriteTimestamp2(frame.cmd, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, frame.timestamps.handle(), 1);
     }
 
     // Color attachment -> present source.
@@ -586,22 +593,6 @@ bool Renderer::renderFrame() {
     // Timing.
     const double cpu_ms = std::chrono::duration<double, std::milli>(core::Clock::now() - frame_start).count();
     stats_.cpu_frame_ms.add(cpu_ms);
-
-    // Read back GPU timestamps (lag by frames-in-flight for availability).
-    if (impl.timestamp_pool.handle() != VK_NULL_HANDLE) {
-        if (impl.timestamps_ready >= impl.frames.size()) {
-            std::array<std::uint64_t, 4> values{};
-            if (vkGetQueryPoolResults(impl.device->handle(), impl.timestamp_pool.handle(), 0, 2,
-                                      sizeof(std::uint64_t) * 2, values.data(), sizeof(std::uint64_t),
-                                      VK_QUERY_RESULT_64_BIT) == VK_SUCCESS) {
-                const float period = impl.device->timestampPeriodNanos();
-                const double gpu_ms = static_cast<double>(values[1] - values[0]) * period / 1e6;
-                stats_.gpu_frame_ms.add(gpu_ms);
-            }
-        } else {
-            ++impl.timestamps_ready;
-        }
-    }
 
     ++impl.frame_count;
     ++stats_.presented_frames;

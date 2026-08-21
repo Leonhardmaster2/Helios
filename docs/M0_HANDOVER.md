@@ -389,6 +389,9 @@ node scripts/check_module_deps.mjs
    (D-017..D-020 first), evidence/m0/M0_REPORT.md, this document.
 2. Fix the known M1 perf item: advance `frame_index` so both in-flight frame slots are
    used (currently always slot 0 — the plumbing is ready, the increment is missing).
+   *(Update, 21 Aug 2026: done — the loop now rotates slots via `frame_count`, and each
+   `FrameContext` owns its own timestamp query pool so a shared-pool reset can no longer
+   race an in-flight frame.)*
 3. Pick up the first M1 work item from ROADMAP.md; keep the smoke suite + evidence flow
    green after every change (`--headless-smoke`, windowed, resize tests are the regression
    gate).

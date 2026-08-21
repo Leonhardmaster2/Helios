@@ -62,3 +62,76 @@ TEST_CASE("lookAt view matrix") {
     const Vec4f eye_in_view = view * Vec4f{0, 0, 5, 1};
     CHECK(eye_in_view.v[2] == doctest::Approx(0.0f));
 }
+
+// ---------------------------------------------------------------------------
+// M1: frame-tagged positions and quaternions (frames.hpp / quat.hpp)
+// ---------------------------------------------------------------------------
+#include "helios/math/frames.hpp"
+
+#include <type_traits>
+
+using helios::math::BodyFixedPosition;
+using helios::math::FrameId;
+using helios::math::Quatd;
+using helios::math::Vec3d;
+
+constexpr double kPi = 3.141592653589793;
+
+TEST_CASE("same-frame position difference is checked and exact") {
+    const FrameId earth{1};
+    const BodyFixedPosition a{earth, Vec3d{1e7, 0.0, 0.0}};
+    const BodyFixedPosition b{earth, Vec3d{1e7 + 3.5, 4.25, -1.0}};
+    auto d = a.differenceTo(b);
+    REQUIRE(d.ok());
+    CHECK(d.value().v[0] == doctest::Approx(3.5));
+    CHECK(d.value().v[1] == doctest::Approx(4.25));
+    CHECK(d.value().v[2] == doctest::Approx(-1.0));
+    // Round trip: displacedBy(differenceTo) returns the other position.
+    const BodyFixedPosition b2 = a.displacedBy(d.value());
+    auto back = b2.differenceTo(b);
+    REQUIRE(back.ok());
+    CHECK(length(back.value()) < 1e-6);
+}
+
+TEST_CASE("cross-frame position difference is rejected") {
+    const BodyFixedPosition a{FrameId{1}, Vec3d{0, 0, 0}};
+    const BodyFixedPosition b{FrameId{2}, Vec3d{1, 1, 1}};
+    auto d = a.differenceTo(b);
+    CHECK_FALSE(d.ok());
+    CHECK(static_cast<int>(d.error().code()) == static_cast<int>(helios::core::ErrorCode::InvalidArgument));
+}
+
+TEST_CASE("cross-kind arithmetic is a type error (positions do not mix)") {
+    // BarycentricPosition and BodyFixedPosition are distinct types with no
+    // converting constructors or cross-type operators; this is enforced by
+    // the type system itself, so there is nothing to exercise at runtime.
+    static_assert(!std::is_convertible_v<helios::math::BarycentricPosition, BodyFixedPosition>);
+}
+
+TEST_CASE("quaternion basics: axis-angle rotates X to Y about Z") {
+    const Quatd q = Quatd::fromAxisAngle(Vec3d{0, 0, 1}, kPi / 2.0);
+    const Vec3d r = q.rotate(Vec3d{1, 0, 0});
+    CHECK(r.v[0] == doctest::Approx(0.0).epsilon(1e-12));
+    CHECK(r.v[1] == doctest::Approx(1.0).epsilon(1e-12));
+    CHECK(r.v[2] == doctest::Approx(0.0).epsilon(1e-12));
+}
+
+TEST_CASE("quaternion composition applies rotations in order") {
+    const Quatd qz = Quatd::fromAxisAngle(Vec3d{0, 0, 1}, 1.5707963267948966); // +90 deg
+    const Quatd qx = Quatd::fromAxisAngle(Vec3d{1, 0, 0}, 1.5707963267948966); // +90 deg
+    // (qz * qx) rotates about X first, then about Z.
+    // (0,1,0) --about X--> (0,0,1) --about Z--> (0,0,1).
+    const Vec3d r = (qz * qx).rotate(Vec3d{0, 1, 0});
+    CHECK(r.v[0] == doctest::Approx(0.0).epsilon(1e-12));
+    CHECK(r.v[1] == doctest::Approx(0.0).epsilon(1e-12));
+    CHECK(r.v[2] == doctest::Approx(1.0).epsilon(1e-12));
+}
+
+TEST_CASE("quaternion inverse round-trips a rotation") {
+    const Quatd q = Quatd::fromAxisAngle(Vec3d{0.3, -0.5, 0.8}, 0.7).normalized();
+    const Vec3d v{2.0, -3.0, 1.5};
+    const Vec3d r = q.conjugate().rotate(q.rotate(v));
+    CHECK(r.v[0] == doctest::Approx(v.v[0]).epsilon(1e-12));
+    CHECK(r.v[1] == doctest::Approx(v.v[1]).epsilon(1e-12));
+    CHECK(r.v[2] == doctest::Approx(v.v[2]).epsilon(1e-12));
+}

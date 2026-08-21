@@ -74,6 +74,13 @@ Decisions closed here:
 
 ### ⬜ Milestone 1 — Precision laboratory
 
+> **Status note (21 August 2026):** M1 work has started. Landed so far:
+> frame-tagged coordinate types (`helios_math` `frames.hpp`/`quat.hpp`,
+> D-021), `Instant` + immutable `FrameSnapshot` + synthetic static/rotating
+> frame providers (`helios_universe`), and the known M0 perf fix (frame
+> slots now rotate; per-frame timestamp pools). Everything else below is
+> still open; no M1 evidence exists yet.
+
 **Goal:** validate frame-tagged coordinates and depth over the actual v1 spatial range before planet systems depend on them.
 
 Includes:
