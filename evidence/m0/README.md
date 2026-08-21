@@ -10,6 +10,7 @@ Vulkan SDK 1.4.328.1, Vulkan loader 1.4.341).
 |---|---|
 | `local/` | Headless smoke evidence: `capabilities.json`, `performance.json`, `evidence.json` (8 iterations, zero validation errors) |
 | `perf/` | Windowed performance capture: 400 frames at 1280×720 with ImGui + smoke scene (zero validation errors) |
+| `perf2/` | **HISTORICAL — superseded by `perf/`.** Early windowed capture from the first windowed-path bring-up (commit-era `05c6d7f`, 16 Aug 2026, before the performance-report unit fixes). Kept for provenance; do not compare against current numbers. |
 | `windowed/` | Windowed evidence run: 240 frames at 1280×720 (zero validation errors) |
 | `resize/` | Swapchain-recreation exercise: 90 frames with two mid-run window resizes (1280×720 → 853×480 → back), zero validation errors |
 

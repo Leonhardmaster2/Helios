@@ -41,6 +41,8 @@ CliOptions parseCli(int argc, char** argv) {
             options.show_help = true;
         } else if (arg == "--headless-smoke") {
             options.headless_smoke = true;
+        } else if (arg == "--precision-lab") {
+            options.precision_lab = true;
         } else if (arg == "--smoke") {
             options.windowed_smoke = true;
         } else if (arg == "--disable-validation") {
@@ -95,6 +97,9 @@ Modes:
   (default)                 Windowed explorer: SDL3 window, Vulkan smoke scene,
                             ImGui debug UI, validation layers.
   --headless-smoke          Swapchain-free Vulkan smoke suite + reports, no window.
+  --precision-lab           M1 precision laboratory: deterministic CPU route
+                            measuring frame transforms, reparenting, jitter,
+                            and reversed-Z depth; writes evidence/m1 reports.
   --smoke                   Windowed smoke scene (same as default).
 
 Options:
@@ -103,7 +108,8 @@ Options:
   --iterations N            Headless smoke repetitions per path (default 3).
   --resize-test             Windowed: resize the window mid-run to exercise
                             swapchain recreation (use with --frames N).
-  --report-dir DIR          Evidence output directory (default evidence/m0/local).
+  --report-dir DIR          Evidence output directory (default evidence/m0/local;
+                            the precision lab defaults to evidence/m1/local).
   --enable-validation       Enable VK_LAYER_KHRONOS_validation (default on).
   --disable-validation      Disable validation layers.
   --no-clear --no-triangle --no-depth --no-compute --no-transfer --no-timestamp

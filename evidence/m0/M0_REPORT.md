@@ -3,6 +3,10 @@
 Date: 16 August 2026 · Reference profile (D-017): Windows 11 (build 26200) / MSVC 19.44.35228
 (VS 2022 Community) / CMake 4.2.0-rc2 / NVIDIA GeForce RTX 5080, driver 610.74,
 Vulkan loader 1.4.341, Vulkan SDK 1.4.328.1. HEAD: 5394117 (evidence bundle commit 56a9caf).
+*(Correction, 21 Aug 2026: the bundles were subsequently regenerated at the
+true HEAD — first at `3dd2008` after the frame-slot fix, then refreshed with
+later commits; see `git log -- evidence/m0`. The narrative below describes
+the original M0 verification runs and is preserved as written.)*
 
 ## 1. Implementation summary
 

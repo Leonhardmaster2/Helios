@@ -81,7 +81,22 @@ The proposed 0.1 mm same-body/local transform threshold is tighter than the user
 
 ### Screen-space stability
 
-Run stationary and prescribed micro-motion cameras at the surface, transition boundary, orbit, 10⁹ m, 10¹² m, and 10¹³ m. Record maximum and percentile projected movement of static landmarks after removing intentional camera motion. Choose the pass threshold during M1 and publish captures plus numeric data.
+Run stationary and prescribed micro-motion cameras at the surface, transition boundary, orbit, 10⁹ m, 10¹² m, and 10¹³ m. Record maximum and percentile projected movement of static landmarks after removing intentional camera motion.
+
+**M1 threshold (accepted 21 August 2026, measured in `evidence/m1`):**
+
+- **Stationary camera, static landmark: 0 px** — a deterministic engine must
+  produce bitwise-identical projections for identical inputs; any nonzero
+  value indicates nondeterminism, not round-off.
+- **Cross-representation jitter ≤ 0.5 px** — the deviation between projecting
+  a landmark from barycentric storage versus through a body-frame storage
+  round trip. Rationale: sub-pixel instability is invisible at normal viewing
+  distances; 1 px is the first visibly detectable discontinuity, so the
+  budget is set below it with headroom. Measured on the reference profile:
+  ≤ 0.018 px worst case at 10¹³ m.
+- **Frame-change discontinuity ≤ 1.0 px** — the visible-detection bound; the
+  per-switch pose jump is additionally bounded at 1e-2 m in root coordinates
+  (measured: 0 m — transitions are exact transforms of the same point).
 
 ## Depth suite
 

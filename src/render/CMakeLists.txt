@@ -5,7 +5,9 @@ add_library(helios_render STATIC
   frame.cpp
   reports.cpp
   debug_ui.cpp
-  headless.cpp)
+  headless.cpp
+  scene_assembler.cpp
+  device_probe.cpp)
 target_include_directories(helios_render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(helios_render PUBLIC helios_core helios_math helios_assets helios_universe helios_planet)
 target_link_libraries(helios_render PRIVATE helios_vk SDL3::SDL3)

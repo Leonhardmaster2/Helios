@@ -97,7 +97,12 @@ There is deliberately no `src/`, `CMakeLists.txt`, or build command yet.
 
 ## Building and contributing
 
-There is nothing to build yet. [Milestone 0](ROADMAP.md) creates the first reproducible application skeleton, capability report, test target, CI job, and swapchain-free smoke path.
+Milestone 0 is complete and Milestone 1 is in progress: the repository now
+contains a full CMake build (MSVC 2022 on Windows; presets in
+`CMakePresets.json`), a Vulkan 1.3 renderer with headless and windowed smoke
+paths, doctest unit suites, and evidence tooling. See [ROADMAP.md](ROADMAP.md)
+for current status, `evidence/m0/README.md` and `evidence/m1/README.md` for
+verified results, and `evidence/m0/commands.md` for the build/test commands.
 
 Documentation issues and corrections are welcome. Code contributions are not being accepted until the reviewed contributor agreement, real legal identity/contact details, and signing workflow exist. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

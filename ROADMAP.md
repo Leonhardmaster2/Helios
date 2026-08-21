@@ -74,12 +74,24 @@ Decisions closed here:
 
 ### ⬜ Milestone 1 — Precision laboratory
 
-> **Status note (21 August 2026):** M1 work has started. Landed so far:
-> frame-tagged coordinate types (`helios_math` `frames.hpp`/`quat.hpp`,
-> D-021), `Instant` + immutable `FrameSnapshot` + synthetic static/rotating
-> frame providers (`helios_universe`), and the known M0 perf fix (frame
-> slots now rotate; per-frame timestamp pools). Everything else below is
-> still open; no M1 evidence exists yet.
+> **Status note (21 August 2026): M1 IN PROGRESS — first evidence bundle exists.**
+>
+> Landed and evidenced (`evidence/m1/local`, `helios --precision-lab`):
+> frame-tagged coordinate types with explicit scalar representations
+> (`helios_math` `frames.hpp`/`quat.hpp`, D-021); validated `Instant` +
+> immutable `FrameSnapshot` (builder/finalized) + synthetic static/rotating
+> frame providers with period-reduced phase computation (`helios_universe`);
+> camera reparenting with enter/exit hysteresis, velocity transform, and
+> drift-free repeated transitions; the `helios_render` scene-assembly
+> boundary (`NearRenderRecord` float32 / `DistantBodyRecord`); a
+> deterministic CPU precision route measuring ULP spacing, round-trip errors,
+> reparenting discontinuity/drift, screen-space jitter, and analytic
+> reversed-Z depth — all thresholds pass on the reference profile.
+>
+> Still open for M1 completion: GPU/render-path jitter and depth captures,
+> the low-detail sphere/impostor transition experiment, prescribed
+> micro-motion camera routes, and cross-device repetition of the precision
+> bundle. The milestone must NOT be marked complete until those pass too.
 
 **Goal:** validate frame-tagged coordinates and depth over the actual v1 spatial range before planet systems depend on them.
 

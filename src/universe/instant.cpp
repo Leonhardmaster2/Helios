@@ -6,6 +6,32 @@
 
 namespace helios::universe {
 
+bool Instant::isValid() const noexcept {
+    return std::isfinite(seconds_of_day) && seconds_of_day >= 0.0 && seconds_of_day < kSecondsPerDay;
+}
+
+core::Result<Instant> Instant::make(std::int64_t whole_days, double seconds_of_day, TimeScale scale) {
+    if (!std::isfinite(seconds_of_day)) {
+        return core::makeError(core::ErrorCode::InvalidArgument, "instant seconds_of_day must be finite");
+    }
+    Instant out;
+    // Normalize out-of-range seconds instead of rejecting them: callers
+    // computing with doubles legitimately produce 86400.0-sized values.
+    if (seconds_of_day < 0.0 || seconds_of_day >= kSecondsPerDay) {
+        double days = std::floor(seconds_of_day / kSecondsPerDay);
+        seconds_of_day -= days * kSecondsPerDay;
+        if (seconds_of_day < 0.0) { // FP drift guard
+            seconds_of_day += kSecondsPerDay;
+            days -= 1.0;
+        }
+        whole_days += static_cast<std::int64_t>(days);
+    }
+    out.whole_days = whole_days;
+    out.seconds_of_day = seconds_of_day;
+    out.scale = scale;
+    return out;
+}
+
 int Instant::compare(Instant const& a, Instant const& b) noexcept {
     // Compare day counts first (exact), then seconds of day.
     if (a.whole_days < b.whole_days)

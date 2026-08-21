@@ -298,6 +298,8 @@ Helios/
 | clang-format (src+tests, --Werror) | 0 violations | | | |
 
 Evidence bundles (all at HEAD 5394117, all 0 validation errors):
+*(Correction, 21 Aug 2026: bundles were later regenerated at true HEAD —
+see `git log -- evidence/m0`; the hashes in this section are historical.)*
 - `evidence/m0/local/` — headless ×8 (clear 921600 px match, triangle #3f4080, depth
   0.150/0.500/0.900 near-wins, compute 4096 bit-exact, transfer 8192 el + 16384 B image,
   timestamp 0.0044 ms @ 1 ns).
@@ -402,3 +404,6 @@ node scripts/check_module_deps.mjs
 
 ---
 *End of M0 handover. Working tree at commit 8a82ce4; M0 evidence at HEAD 5394117.*
+*(Correction, 21 Aug 2026: M0 evidence was regenerated at the true HEAD
+after the frame-slot fix and again after later commits; this footer records
+the state at handover-writing time, not the current provenance.)*

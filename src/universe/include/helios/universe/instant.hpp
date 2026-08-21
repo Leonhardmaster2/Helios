@@ -8,8 +8,9 @@
 // time scale; M7 pins the real scales and conversion data.
 #pragma once
 
+#include "helios/core/error.hpp"
+
 #include <cstdint>
-#include <limits>
 
 namespace helios::universe {
 
@@ -25,7 +26,18 @@ struct Instant {
     double seconds_of_day = 0.0; // [0, kSecondsPerDay), normalized
     TimeScale scale = TimeScale::Synthetic;
 
-    // Total seconds as long double; exact well beyond any v1 range need.
+    // Validated construction: rejects non-finite or out-of-range
+    // seconds_of_day. Range errors are InvalidArgument, never silent.
+    [[nodiscard]] static core::Result<Instant> make(std::int64_t whole_days, double seconds_of_day,
+                                                    TimeScale scale = TimeScale::Synthetic);
+
+    // Checks the representation invariant (finite seconds in [0, 86400)).
+    [[nodiscard]] bool isValid() const noexcept;
+
+    // Total seconds as long double. NOTE: on MSVC x64 long double == double,
+    // so this is a convenience for ordering/small ranges only — never feed
+    // the result back into phase computations at large day counts (see
+    // RotatingFrameProvider::phaseFor).
     [[nodiscard]] long double totalSeconds() const noexcept {
         return static_cast<long double>(whole_days) * static_cast<long double>(kSecondsPerDay) +
                static_cast<long double>(seconds_of_day);

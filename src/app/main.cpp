@@ -4,6 +4,7 @@
 // Helios M0 entry point: headless smoke suite or windowed explorer.
 #include "helios/app/cli.hpp"
 #include "helios/app/headless.hpp"
+#include "helios/app/precision_lab.hpp"
 #include "helios/core/log.hpp"
 #include "helios/version.hpp"
 
@@ -91,6 +92,9 @@ int main(int argc, char** argv) {
 
     if (options.headless_smoke) {
         return helios::app::runHeadlessSmoke(options);
+    }
+    if (options.precision_lab) {
+        return helios::app::runPrecisionLab(options);
     }
     return helios::app::runWindowed(options);
 }
