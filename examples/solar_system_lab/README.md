@@ -90,10 +90,10 @@ helios_solar_system.exe --smoke-frames 60
 
 `--help` lists every option: `--days`, `--focus`, `--distance-au`,
 `--elevation`, `--azimuth`, `--fov`, `--planet-scale`, `--sun-scale`,
-`--true-scale`, `--exposure`, `--glare`, `--width`, `--height`,
-`--smoke-frames`.
+`--true-scale`, `--exposure`, `--glare`, `--supersample`, `--width`, `--height`,
+`--smoke-frames`, `--report PATH.json`, `--now`.
 
-Captures are windowless (no SDL video subsystem, no swap chain). The orbit and
+Captures are windowless (no SDL video subsystem, no swap chain). `--report PATH.json` writes the date, camera, display scales, body positions and radii, metrics, adapter and validation count for a reproducible record. The orbit and
 label overlay is rasterised into the PNG with the PNG writer's 4x6 font, so a
 headless image carries the same context as the interactive view. The process
 exits non-zero if the Vulkan validation layer reports an error.

@@ -22,6 +22,8 @@
 #include <SDL3/SDL.h>
 #include <imgui.h>
 
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -30,15 +32,24 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <fstream>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#ifndef HELIOS_GIT_HASH
+#define HELIOS_GIT_HASH "unknown"
+#endif
+#ifndef HELIOS_BUILD_TYPE
+#define HELIOS_BUILD_TYPE "unknown"
+#endif
+
 namespace helios::examples {
 namespace {
 
 using Clock = std::chrono::steady_clock;
+using Json = nlohmann::ordered_json;
 
 constexpr double kAu = kAstronomicalUnitM;
 constexpr double kDaysPerSecondDefault = 2.0;
@@ -312,6 +323,7 @@ void applyCameraInput(DiligentSdlApp const& app, SolarSystemSettings& settings, 
 
 struct CaptureOptions {
     std::string path;
+    std::string report_path;
     std::uint32_t width = 1920;
     std::uint32_t height = 1080;
     int smoke_frames = 0;
@@ -344,6 +356,12 @@ struct CaptureOptions {
             }
             options.path = argv[++index];
             requested = true;
+        } else if (argument == "--report") {
+            if (index + 1 >= argc) {
+                error = "--report needs an output path";
+                return false;
+            }
+            options.report_path = argv[++index];
         } else if (argument == "--width") {
             double v = 0.0;
             if (!value(16.0, 8192.0, v)) {
@@ -448,6 +466,7 @@ struct CaptureOptions {
                 "  --glare N             glare fraction (default 0.12)\n"
                 "  --supersample N       render at N x the output size (1, 2 or 4; default 2)\n"
                 "  --width N --height N  image size (default 1920x1080)\n"
+                "  --report PATH.json    write the capture parameters and metrics\n"
                 "  --smoke-frames N      run the interactive route in a hidden window for N frames\n");
             options.help = true;
             return false;
@@ -503,6 +522,62 @@ int runCapture(CaptureOptions const& options) {
     if (written.failed()) {
         std::fprintf(stderr, "Solar-system capture: %s\n", written.error().to_string().c_str());
         return 1;
+    }
+    if (!options.report_path.empty()) {
+        Json report;
+        report["schema"] = "helios-solar-system-capture-v1";
+        report["commit"] = HELIOS_GIT_HASH;
+        report["build_type"] = HELIOS_BUILD_TYPE;
+        report["adapter"] = headless->adapterName();
+        report["image"] = options.path;
+        report["output_width"] = options.width;
+        report["output_height"] = options.height;
+        report["supersample"] = options.settings.supersample;
+        report["render_width"] = metrics.render_width;
+        report["render_height"] = metrics.render_height;
+        report["j2000_days"] = options.settings.days_since_j2000;
+        report["focus"] = solarSystemBodyName(options.settings.focus);
+        report["camera"] = {{"distance_m", options.settings.camera.distance_m},
+                            {"elevation_deg", options.settings.camera.elevation_deg},
+                            {"azimuth_deg", options.settings.camera.azimuth_deg},
+                            {"vertical_fov_deg", options.settings.camera.vertical_fov_deg}};
+        report["display"] = {{"planet_radius_scale", options.settings.planet_radius_scale},
+                             {"sun_radius_scale", options.settings.sun_radius_scale},
+                             {"exposure_ev", options.settings.exposure_ev},
+                             {"glare", options.settings.glare}};
+        report["metrics"] = {{"bodies_drawn", metrics.bodies_drawn},
+                             {"leaves", metrics.leaves},
+                             {"draw_calls", metrics.draw_calls},
+                             {"triangles", metrics.triangles},
+                             {"max_screen_space_error_px", metrics.max_error_px},
+                             {"selection_ms", metrics.selection_ms}};
+        report["validation_error_count"] = headless->errorCount();
+        report["bodies"] = Json::array();
+        for (int index = 0; index < static_cast<int>(kSolarSystemBodyCount); ++index) {
+            math::Vec3d const position = solarSystemBodyPosition(index, options.settings.days_since_j2000);
+            double const display_radius =
+                solarSystemDisplayRadius(index, options.settings.planet_radius_scale,
+                                         options.settings.sun_radius_scale);
+            SolarSystemBody const& data =
+                index <= 0 ? kSun : kSolarSystemPlanets[static_cast<std::size_t>(index - 1)];
+            report["bodies"].push_back(
+                {{"name", solarSystemBodyName(index)},
+                 {"position_m", {position[0], position[1], position[2]}},
+                 {"distance_au", math::length(position) / kAu},
+                 {"radius_km", data.radius_m / 1000.0},
+                 {"display_radius_km", display_radius / 1000.0},
+                 {"orbital_period_days", data.orbital_period_days},
+                 {"rotation_period_hours", data.rotation_period_hours},
+                 {"mass_kg", data.mass_kg},
+                 {"mean_temperature_k", data.mean_temperature_k}});
+        }
+        std::ofstream out{options.report_path};
+        if (!out) {
+            std::fprintf(stderr, "Solar-system capture: cannot write report %s\n",
+                         options.report_path.c_str());
+        } else {
+            out << report.dump(2) << '\n';
+        }
     }
     std::printf("Solar-system capture: wrote %s (%ux%u, %dx supersample -> %ux%u, scene %ux%u) at "
                 "J2000%+.2f d, focus %s; %u bodies, %u leaves, %llu triangles, "

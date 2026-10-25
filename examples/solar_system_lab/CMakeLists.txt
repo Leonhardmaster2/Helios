@@ -38,6 +38,7 @@ target_link_libraries(helios_solar_system PRIVATE
   helios_planet
   helios_diligent_render
   helios_shader_data
+  helios_json
   Diligent-GraphicsEngineVk-static
   Diligent-GraphicsTools
   Diligent-Common
