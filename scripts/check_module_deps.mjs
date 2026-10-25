@@ -16,9 +16,10 @@ const allowed = {
   assets: ['core', 'math'],
   universe: ['core', 'math', 'assets'],
   planet: ['core', 'math', 'assets'],
+  blackhole: ['core', 'math'],
   vk: ['core'], // external: SDL3, volk, VMA, Vulkan-Headers
-  render: ['core', 'math', 'assets', 'universe', 'planet', 'vk'],
-  app: ['core', 'math', 'assets', 'universe', 'planet', 'render'], // NO vk edge
+  render: ['core', 'math', 'assets', 'universe', 'planet', 'blackhole', 'vk'],
+  app: ['core', 'math', 'assets', 'universe', 'planet', 'blackhole', 'render'], // NO vk edge
 };
 
 const moduleDirs = Object.keys(allowed);

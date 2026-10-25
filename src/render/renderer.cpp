@@ -347,6 +347,35 @@ Renderer::~Renderer() {
         impl_->owned_instance.reset();
     }
 }
+
+void Renderer::processEvent(SDL_Event const& event) {
+#ifdef HELIOS_ENABLE_IMGUI
+    if (impl_ != nullptr && impl_->imgui_enabled && impl_->imgui_initialized) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
+    }
+#else
+    (void)event;
+#endif
+}
+
+bool Renderer::wantsKeyboardCapture() const noexcept {
+#ifdef HELIOS_ENABLE_IMGUI
+    return impl_ != nullptr && impl_->imgui_enabled && impl_->imgui_initialized &&
+           ImGui::GetIO().WantCaptureKeyboard;
+#else
+    return false;
+#endif
+}
+
+bool Renderer::wantsMouseCapture() const noexcept {
+#ifdef HELIOS_ENABLE_IMGUI
+    return impl_ != nullptr && impl_->imgui_enabled && impl_->imgui_initialized &&
+           ImGui::GetIO().WantCaptureMouse;
+#else
+    return false;
+#endif
+}
+
 bool Renderer::renderFrame() {
     HELIOS_ZONE_SCOPED;
     auto& impl = *impl_;

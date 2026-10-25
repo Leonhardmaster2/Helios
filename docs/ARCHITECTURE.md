@@ -1,8 +1,13 @@
 # Architecture
 
-Status: **preliminary architecture — accepted direction, unimplemented and unvalidated**.
+Status: **preliminary architecture — accepted direction; v0.0.1 subset implemented, full v1 unvalidated**.
 
-This document describes how Helios is intended to be structured. It is not a description of code that exists. Product scope lives in [PRODUCT.md](PRODUCT.md), contested choices in [DECISIONS.md](DECISIONS.md), and acceptance evidence in [VALIDATION.md](VALIDATION.md).
+This document describes the intended full-v1 structure. Core portions now exist, including the
+module graph, precision handoff, cube-sphere LOD/terrain/residency foundations, Vulkan paths, and
+experimental labs, but later astronomy/data/atmosphere systems remain proposed. Product scope
+lives in [PRODUCT.md](PRODUCT.md), the implemented MVP in
+[V0_0_1_MVP.md](V0_0_1_MVP.md), contested choices in [DECISIONS.md](DECISIONS.md), and acceptance
+evidence in [VALIDATION.md](VALIDATION.md).
 
 Architecture statements use these maturity labels:
 
@@ -43,7 +48,7 @@ user/input ─▶ reference explorer ─▶ internal engine libraries ─▶ Vul
 
 ## Proposed module graph
 
-Seven v1 static libraries plus the app. Dependencies point only toward entries listed in “Allowed internal dependencies.” Include paths and CMake targets enforce the graph.
+Static libraries plus the app. Dependencies point only toward entries listed in “Allowed internal dependencies.” Include paths and CMake targets enforce the graph. `helios_blackhole` is an experimental v0.0.1 laboratory dependency rather than a commitment to the v1 explorer scope.
 
 | Module | Responsibility | Allowed internal dependencies | Must not know |
 |---|---|---|---|
@@ -52,11 +57,14 @@ Seven v1 static libraries plus the app. Dependencies point only toward entries l
 | `helios_assets` | versioned binary headers/schemas, manifests, checksums, bounded readers/writers, tile/catalog records | `core`, `math` | live Vulkan resources, UI, dynamic LOD policy |
 | `helios_universe` | time, frame graph, ephemeris/rotation backends, body registry, Gaia runtime catalog index | `core`, `math`, `assets` | Vulkan, terrain residency, application controls |
 | `helios_planet` | body-local cube-sphere quadtree, SSE selection, tile request policy, cache/domain state, generator descriptions | `core`, `math`, `assets` | Vulkan handles/queues/descriptors, barycentric model internals |
+| `helios_blackhole` | CPU-reference Schwarzschild geometry, null-geodesic integration, thin-disk radiometry, black-body colourimetry, diagnostics, and validation fixtures | `core`, `math` | GPU handles, UI, Kerr/GRMHD claims |
 | `helios_vk` | instance/device selection, queues, swapchain/headless device path, VMA resources, descriptors, sync, pipeline cache | `core` | bodies, coordinate frames, terrain semantics |
-| `helios_render` | scene assembly boundary, render resources/passes, planet GPU generation/draw, atmosphere, stars, exposure, telemetry | `core`, `math`, `assets`, `universe`, `planet`, `vk` | user workflow, source archive formats such as ADQL/GeoTIFF |
-| `helios_app` | main loop, input/camera intent, scenario/replay, orchestration, debug/provenance UI, report/capture wiring | `core`, `math`, `assets`, `universe`, `planet`, `render` | direct Vulkan resource/queue control; offline source-data parsing |
+| `helios_render` | scene assembly boundary, render resources/passes, planet/experimental GPU draw, atmosphere, stars, exposure, telemetry | `core`, `math`, `assets`, `universe`, `planet`, `blackhole`, `vk` during parity migration | user workflow, source archive formats such as ADQL/GeoTIFF |
+| `helios_app` | main loop, input/camera intent, scenario/replay, orchestration, debug/provenance UI, report/capture wiring | `core`, `math`, `assets`, `universe`, `planet`, `blackhole`, `render` | direct Vulkan resource/queue control; offline source-data parsing |
 
 The app has no `helios_vk` link edge. It creates the SDL window and passes an opaque window/surface source through `helios_render::RendererCreateInfo`; `helios_vk` owns `VkSurfaceKHR`, WSI, and Vulkan lifetime. The Vulkan module may use SDL3 as an external surface adapter without creating an internal dependency on the app.
+
+For the Diligent migration, the raw `helios_vk` implementation is an isolated legacy parity target. Diligent and `helios_vk` each bring a Vulkan loader and must not be linked into one executable. New MVP labs link `Diligent-GraphicsEngineVk-static` with every non-Vulkan Diligent backend disabled; the legacy app/tests remain separate until each parity gate is replaced.
 
 Offline tools:
 

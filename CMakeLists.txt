@@ -9,7 +9,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(Helios
-  VERSION 0.1.0
+  VERSION 0.0.1
   DESCRIPTION "Open-source Solar-System visualization engine and reference explorer"
   LANGUAGES C CXX)
 
@@ -20,6 +20,8 @@ option(HELIOS_BUILD_TESTS         "Build Helios test executables" ON)
 option(HELIOS_ENABLE_VALIDATION   "Enable Vulkan validation layers (dev/CI builds)" ON)
 option(HELIOS_ENABLE_TRACY        "Enable Tracy profiler client" ON)
 option(HELIOS_ENABLE_IMGUI        "Enable Dear ImGui debug UI" ON)
+option(HELIOS_ENABLE_DILIGENT     "Build the Vulkan-only Diligent renderer and labs" ON)
+option(HELIOS_ENABLE_GPU_TESTS    "Register short physical-GPU CTest checks" OFF)
 option(HELIOS_WERROR              "Treat compiler warnings as errors" OFF)
 option(HELIOS_ENABLE_ASAN         "Enable AddressSanitizer where supported" OFF)
 option(HELIOS_ENABLE_UBSAN        "Enable UndefinedBehaviorSanitizer where supported" OFF)
@@ -33,7 +35,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ---------------------------------------------------------------------------
 include(cmake/HeliosCompileOptions.cmake)
 include(cmake/HeliosDeps.cmake)
+if(HELIOS_ENABLE_DILIGENT)
+  include(cmake/Diligent.cmake)
+endif()
 include(cmake/SlangCompile.cmake)
+
+# Example projects also register bounded headless checks. Testing must be
+# enabled before their subdirectories are evaluated so those checks appear in
+# the generated CTest graph.
+if(HELIOS_BUILD_TESTS)
+  enable_testing()
+endif()
 
 # ---------------------------------------------------------------------------
 # Modules (dependency graph per docs/ARCHITECTURE.md)
@@ -43,9 +55,11 @@ add_subdirectory(src/math)
 add_subdirectory(src/assets)
 add_subdirectory(src/universe)
 add_subdirectory(src/planet)
+add_subdirectory(src/blackhole)
 add_subdirectory(src/vk)
 add_subdirectory(src/render)
 add_subdirectory(src/app)
+add_subdirectory(examples)
 
 # ---------------------------------------------------------------------------
 # Shaders: offline Slang -> SPIR-V compilation + reflection manifest
@@ -56,7 +70,6 @@ helios_compile_shaders()
 # Tests
 # ---------------------------------------------------------------------------
 if(HELIOS_BUILD_TESTS)
-  enable_testing()
   add_subdirectory(tests)
 endif()
 

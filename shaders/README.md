@@ -8,6 +8,19 @@ Compiled offline to SPIR-V by `slangc` (pinned v2026.14.1, see
 | `triangle.slang` | Native triangle smoke path | set 0 / binding 0: UBO `TriangleUbo` (mat4 mvp) |
 | `depth.slang` | Reversed-Z depth smoke path | set 0 / binding 0: UBO `DepthParams` (8 quads + 8 colors) |
 | `compute.slang` | Compute smoke path | set 0 / binding 0: SSBO `uint[]`; push constants (count, seed) |
+| `fullscreen.slang` | Full-screen triangle shared by the lab passes | none |
+| `black_hole.slang`, `black_hole_refine.slang` | Black-hole lab: geodesic trace, then adaptive supersampling of edges (`lib/black_hole_trace.slang`) | set 0 / binding 0: UBO `BlackHoleFrame`; binding 1: black-body table (`Texture2D`, fetched with `Load`); refine adds bindings 2-3 |
+| `hdr_glare.slang` | Lab display chain: glare pyramid down/upsample | set 0 / binding 0: UBO `HdrGlareParams`; binding 1: combined image sampler |
+| `hdr_composite.slang`, `hdr_accumulate.slang` | Lab display chain: exposure, tone map, dither; progressive accumulation | set 0 / binding 0: UBO `HdrCompositeParams`; bindings 1-2: combined image samplers |
+| `neutron_star.slang`, `deep_sky_background.slang`, `emission_volume.slang` | Deep-sky lab full-screen passes (`lib/deep_sky.slang`) | set 0 / binding 0: UBO `DeepSkyFrame`; binding 1: black-body table; the gas volume adds binding 3 (emission volume) and 4 (UBO `PointSourcesBlock`) |
+| `galaxy_stars.slang` | Deep-sky lab: one instanced quad per star particle of the N-body run | vertex stage: binding 0 UBO `DeepSkyFrame`, 1 population table, 2 surface-density maps; one per-instance `float4` attribute |
+| `hydro_init.slang`, `hydro_advance.slang`, `hydro_speed.slang`, `hydro_rays.slang`, `hydro_shade.slang` | Deep-sky lab gas dynamics on the GPU (`lib/hydro.slang`): initial state, time step, signal speed, radiation field, emission | set 0 / binding 0: UBO `HydroParams`; state volumes as sampled and storage images |
+
+Shaders drawn through Diligent use `SV_VulkanVertexID`/`SV_VulkanInstanceID`:
+`SV_VertexID`/`SV_InstanceID` compile to the SPIR-V `DrawParameters`
+capability, which the Diligent Vulkan device does not enable. Diligent also
+gives Vulkan Direct3D-style clip space (+y up), so a full-screen pass must put
+texture row 0 at clip-space y = +1.
 
 The CPU-side ABI contract lives in `shaders/abi.hpp`; `tests/test_shader_abi.cpp`
 reflects the generated SPIR-V (SPIRV-Reflect) and verifies layouts and

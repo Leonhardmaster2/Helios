@@ -16,10 +16,10 @@ HeliosVersion heliosVersion() noexcept {
 #define HELIOS_VERSION_MAJOR 0
 #endif
 #ifndef HELIOS_VERSION_MINOR
-#define HELIOS_VERSION_MINOR 1
+#define HELIOS_VERSION_MINOR 0
 #endif
 #ifndef HELIOS_VERSION_PATCH
-#define HELIOS_VERSION_PATCH 0
+#define HELIOS_VERSION_PATCH 1
 #endif
     HeliosVersion v;
     v.major = HELIOS_VERSION_MAJOR;

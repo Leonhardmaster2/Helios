@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (c) 2026 the Helios authors and contributors
 set(HELIOS_MANIFEST_OUT "@manifest@")
-set(HELIOS_SHADER_DIR "@shader_out_dir@")
-
-file(GLOB HELIOS_SPV_FILES "${HELIOS_SHADER_DIR}/*.spv")
+set(HELIOS_SPV_FILES "@shader_spv_outputs@")
 list(SORT HELIOS_SPV_FILES)
 
 set(entries)

@@ -13,6 +13,7 @@
 #include "helios/core/io.hpp"
 #include "shaders/abi.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <filesystem>
 #include <string>
@@ -69,9 +70,40 @@ struct SpvModule {
 
 TEST_CASE("embedded shaders present and hashes match the manifest") {
     // Every compiled shader must be embedded and must match the manifest hashes.
-    for (auto const& name :
-         {"triangle.slang.vertex.spv", "triangle.slang.fragment.spv", "depth.slang.vertex.spv",
-          "depth.slang.fragment.spv", "compute.slang.compute.spv"}) {
+    for (auto const& name : {"triangle.slang.vertex.spv",
+                             "triangle.slang.fragment.spv",
+                             "depth.slang.vertex.spv",
+                             "depth.slang.fragment.spv",
+                             "compute.slang.compute.spv",
+                             "mesh.slang.vertex.spv",
+                             "mesh.slang.fragment.spv",
+                             "impostor.slang.vertex.spv",
+                             "impostor.slang.fragment.spv",
+                             "planet_patch.slang.vertex.spv",
+                             "planet_patch.slang.fragment.spv",
+                             "diligent_precision.slang.compute.spv",
+                             "fullscreen.slang.vertex.spv",
+                             "black_hole.slang.fragment.spv",
+                             "black_hole_refine.slang.fragment.spv",
+                             "hdr_glare.slang.fragment.spv",
+                             "hdr_composite.slang.fragment.spv",
+                             "hdr_accumulate.slang.fragment.spv",
+                             "neutron_star.slang.fragment.spv",
+                             "deep_sky_background.slang.fragment.spv",
+                             "galaxy_stars.slang.vertex.spv",
+                             "galaxy_stars.slang.fragment.spv",
+                             "emission_volume.slang.fragment.spv",
+                             "hydro_init.slang.compute.spv",
+                             "hydro_advance.slang.compute.spv",
+                             "hydro_speed.slang.compute.spv",
+                             "hydro_rays.slang.compute.spv",
+                             "hydro_shade.slang.compute.spv",
+                             "hydro_smooth.slang.compute.spv",
+                             "planet_sky.slang.fragment.spv",
+                             "point_source_dust.slang.fragment.spv",
+                             "galaxy_resolved_stars.slang.vertex.spv",
+                             "galaxy_resolved_stars.slang.fragment.spv",
+                             "star_system.slang.fragment.spv"}) {
         const std::string msg = "embedded shader missing: " + std::string(name);
         CHECK_MESSAGE(embeddedSpirv(name) != nullptr, msg);
     }
@@ -209,10 +241,10 @@ TEST_CASE("compute shader ABI") {
 }
 
 TEST_CASE("spir-v validity basics") {
-    // Every module must be valid SPIR-V: magic + version header.
-    for (auto const& name :
-         {"triangle.slang.vertex.spv", "triangle.slang.fragment.spv", "depth.slang.vertex.spv",
-          "depth.slang.fragment.spv", "compute.slang.compute.spv"}) {
+    // Every embedded module, including newly added lab shaders, must have a
+    // valid SPIR-V header. This intentionally avoids a hand-maintained subset.
+    for (std::size_t i = 0; i < helios::shaders::embedded::kShaderCount; ++i) {
+        auto const* name = helios::shaders::embedded::kShaders[i].name;
         auto bytes = embeddedSpirv(name);
         REQUIRE(bytes != nullptr);
         CHECK(bytes->size() >= 20);
@@ -220,5 +252,314 @@ TEST_CASE("spir-v validity basics") {
         const std::uint32_t magic =
             (*bytes)[0] | ((*bytes)[1] << 8) | ((*bytes)[2] << 16) | ((*bytes)[3] << 24);
         CHECK(magic == 0x07230203);
+    }
+}
+
+TEST_CASE("mesh/impostor push-constant ABI") {
+    // mesh.slang vertex: push constants 96 bytes total.
+    {
+        SpvModule spv;
+        REQUIRE(spv.load(*embeddedSpirv("mesh.slang.vertex.spv")));
+        const auto* block = spv.module.push_constant_blocks;
+        REQUIRE(spv.module.push_constant_block_count >= 1);
+        CHECK(block[0].size == sizeof(helios::shaders::MeshPC));
+    }
+    // impostor.slang fragment: push constants 64 bytes + SV_Depth output.
+    {
+        SpvModule spv;
+        REQUIRE(spv.load(*embeddedSpirv("impostor.slang.fragment.spv")));
+        const auto* block = spv.module.push_constant_blocks;
+        REQUIRE(spv.module.push_constant_block_count >= 1);
+        CHECK(block[0].size == sizeof(helios::shaders::ImpostorPC));
+    }
+}
+
+TEST_CASE("planet patch descriptor ABI") {
+    SpvModule vertex;
+    REQUIRE(vertex.load(*embeddedSpirv("planet_patch.slang.vertex.spv")));
+
+    std::uint32_t binding_count = 0;
+    REQUIRE(spvReflectEnumerateDescriptorBindings(&vertex.module, &binding_count, nullptr) ==
+            SPV_REFLECT_RESULT_SUCCESS);
+    REQUIRE(binding_count == 3);
+    std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);
+    REQUIRE(spvReflectEnumerateDescriptorBindings(&vertex.module, &binding_count, bindings.data()) ==
+            SPV_REFLECT_RESULT_SUCCESS);
+    std::ranges::sort(bindings, {}, &SpvReflectDescriptorBinding::binding);
+    CHECK(bindings[0]->set == 0);
+    CHECK(bindings[0]->binding == 0);
+    CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    CHECK(bindings[0]->block.size == sizeof(helios::shaders::PlanetPatchFrame));
+    REQUIRE(bindings[0]->block.member_count == 11);
+    CHECK(bindings[0]->block.members[4].offset == offsetof(helios::shaders::PlanetPatchFrame, planet));
+    CHECK(bindings[0]->block.members[5].offset == offsetof(helios::shaders::PlanetPatchFrame, light));
+    CHECK(bindings[0]->block.members[7].offset == offsetof(helios::shaders::PlanetPatchFrame, ring));
+    CHECK(bindings[0]->block.members[10].offset == offsetof(helios::shaders::PlanetPatchFrame, ambient_color));
+
+    CHECK(bindings[1]->set == 0);
+    CHECK(bindings[1]->binding == 1);
+    CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    REQUIRE(bindings[1]->block.member_count == 1);
+    CHECK(bindings[1]->block.members[0].size == sizeof(helios::shaders::PlanetPatchRecord));
+    CHECK(bindings[2]->binding == 2);
+    CHECK(bindings[2]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    CHECK(bindings[2]->block.size == sizeof(helios::shaders::PlanetBodyParams));
+
+    SpvModule fragment;
+    REQUIRE(fragment.load(*embeddedSpirv("planet_patch.slang.fragment.spv")));
+    CHECK(fragment.module.shader_stage == SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT);
+}
+
+TEST_CASE("Diligent precision compute descriptor ABI") {
+    SpvModule spv;
+    REQUIRE(spv.load(*embeddedSpirv("diligent_precision.slang.compute.spv")));
+    CHECK(spv.module.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+    REQUIRE(spv.module.entry_point_count == 1);
+    CHECK(spv.module.entry_points[0].local_size.x == 8);
+    CHECK(spv.module.entry_points[0].local_size.y == 1);
+    CHECK(spv.module.entry_points[0].local_size.z == 1);
+
+    std::uint32_t binding_count = 0;
+    REQUIRE(spvReflectEnumerateDescriptorBindings(&spv.module, &binding_count, nullptr) ==
+            SPV_REFLECT_RESULT_SUCCESS);
+    REQUIRE(binding_count == 3);
+    std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);
+    REQUIRE(spvReflectEnumerateDescriptorBindings(&spv.module, &binding_count, bindings.data()) ==
+            SPV_REFLECT_RESULT_SUCCESS);
+    std::ranges::sort(bindings, {}, &SpvReflectDescriptorBinding::binding);
+    CHECK(bindings[0]->set == 0);
+    CHECK(bindings[0]->binding == 0);
+    CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    CHECK(bindings[0]->block.size == sizeof(helios::shaders::DiligentPrecisionFrame));
+    REQUIRE(bindings[0]->block.member_count == 4);
+    CHECK(bindings[0]->block.members[3].offset ==
+          offsetof(helios::shaders::DiligentPrecisionFrame, metadata));
+    CHECK(bindings[1]->binding == 1);
+    CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    CHECK(bindings[2]->binding == 2);
+    CHECK(bindings[2]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+}
+
+namespace {
+
+// True when the module declares OpCapability DrawParameters. Diligent's
+// Vulkan device only enables shaderDrawParameters together with native
+// multi-draw, so a lab shader that needs it fails Vulkan validation.
+bool declaresDrawParameters(std::vector<std::uint8_t> const& bytes) {
+    constexpr std::uint32_t kOpCapability = 17;
+    constexpr std::uint32_t kCapabilityDrawParameters = 4427;
+    auto word = [&](std::size_t index) {
+        return static_cast<std::uint32_t>(bytes[index * 4]) |
+               (static_cast<std::uint32_t>(bytes[index * 4 + 1]) << 8) |
+               (static_cast<std::uint32_t>(bytes[index * 4 + 2]) << 16) |
+               (static_cast<std::uint32_t>(bytes[index * 4 + 3]) << 24);
+    };
+    const std::size_t word_count = bytes.size() / 4;
+    for (std::size_t index = 5; index < word_count;) {
+        const std::uint32_t instruction = word(index);
+        const std::uint32_t length = instruction >> 16;
+        if (length == 0) {
+            break;
+        }
+        if ((instruction & 0xFFFFu) == kOpCapability && index + 1 < word_count &&
+            word(index + 1) == kCapabilityDrawParameters) {
+            return true;
+        }
+        index += length;
+    }
+    return false;
+}
+
+std::vector<SpvReflectDescriptorBinding*> sortedBindings(SpvReflectShaderModule const& module) {
+    std::uint32_t count = 0;
+    REQUIRE(spvReflectEnumerateDescriptorBindings(&module, &count, nullptr) == SPV_REFLECT_RESULT_SUCCESS);
+    std::vector<SpvReflectDescriptorBinding*> bindings(count);
+    REQUIRE(spvReflectEnumerateDescriptorBindings(&module, &count, bindings.data()) ==
+            SPV_REFLECT_RESULT_SUCCESS);
+    std::ranges::sort(bindings, {}, &SpvReflectDescriptorBinding::binding);
+    return bindings;
+}
+
+} // namespace
+
+TEST_CASE("Diligent lab vertex shaders do not need the DrawParameters capability") {
+    for (auto const& name : {"planet_patch.slang.vertex.spv", "fullscreen.slang.vertex.spv"}) {
+        const std::string message = "module declares DrawParameters: " + std::string(name);
+        CHECK_MESSAGE(!declaresDrawParameters(*embeddedSpirv(name)), message);
+    }
+}
+
+TEST_CASE("black-hole lab descriptor ABI") {
+    {
+        SpvModule vertex;
+        REQUIRE(vertex.load(*embeddedSpirv("fullscreen.slang.vertex.spv")));
+        CHECK(vertex.module.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT);
+        CHECK(sortedBindings(vertex.module).empty());
+    }
+    {
+        // Geodesic trace: the frame constants and the black-body colour table.
+        SpvModule trace;
+        REQUIRE(trace.load(*embeddedSpirv("black_hole.slang.fragment.spv")));
+        CHECK(trace.module.shader_stage == SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT);
+        auto const bindings = sortedBindings(trace.module);
+        REQUIRE(bindings.size() == 2);
+        CHECK(bindings[0]->set == 0);
+        CHECK(bindings[0]->binding == 0);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::BlackHoleFrame));
+        REQUIRE(bindings[0]->block.member_count == 12);
+        CHECK(bindings[0]->block.members[4].offset == offsetof(helios::shaders::BlackHoleFrame, viewport));
+        CHECK(bindings[0]->block.members[5].offset == offsetof(helios::shaders::BlackHoleFrame, disk));
+        CHECK(bindings[0]->block.members[8].offset == offsetof(helios::shaders::BlackHoleFrame, radiometry));
+        CHECK(bindings[0]->block.members[10].offset == offsetof(helios::shaders::BlackHoleFrame, effects));
+        CHECK(std::string(bindings[0]->block.members[5].name) == "disk");
+        CHECK(std::string(bindings[0]->block.members[10].name) == "effects");
+        CHECK(bindings[0]->block.members[11].offset == offsetof(helios::shaders::BlackHoleFrame, refine));
+        CHECK(bindings[1]->binding == 1);
+        CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    }
+    {
+        // Adaptive refinement: same frame block and table, plus the trace
+        // pass's two outputs, read with texel fetches.
+        SpvModule refine;
+        REQUIRE(refine.load(*embeddedSpirv("black_hole_refine.slang.fragment.spv")));
+        auto const bindings = sortedBindings(refine.module);
+        REQUIRE(bindings.size() == 4);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::BlackHoleFrame));
+        for (std::size_t index = 1; index < bindings.size(); ++index) {
+            CHECK(bindings[index]->binding == index);
+            CHECK(bindings[index]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+        }
+    }
+    {
+        SpvModule bloom;
+        REQUIRE(bloom.load(*embeddedSpirv("hdr_glare.slang.fragment.spv")));
+        auto const bindings = sortedBindings(bloom.module);
+        REQUIRE(bindings.size() == 2);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::HdrGlareParams));
+        CHECK(bindings[1]->binding == 1);
+        CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    }
+    {
+        SpvModule composite;
+        REQUIRE(composite.load(*embeddedSpirv("hdr_composite.slang.fragment.spv")));
+        auto const bindings = sortedBindings(composite.module);
+        REQUIRE(bindings.size() == 3);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::HdrCompositeParams));
+        REQUIRE(bindings[0]->block.member_count == 2);
+        CHECK(bindings[0]->block.members[1].offset == offsetof(helios::shaders::HdrCompositeParams, dither));
+        CHECK(bindings[1]->binding == 1);
+        CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        CHECK(bindings[2]->binding == 2);
+        CHECK(bindings[2]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    }
+}
+
+TEST_CASE("deep-sky lab descriptor ABI") {
+    // Every full-screen scene pass shares the frame block at binding 0 and
+    // the black-body table at 1.
+    for (auto const& name : {"emission_volume.slang.fragment.spv", "neutron_star.slang.fragment.spv",
+                             "deep_sky_background.slang.fragment.spv"}) {
+        CAPTURE(name);
+        SpvModule scene;
+        REQUIRE(scene.load(*embeddedSpirv(name)));
+        CHECK(scene.module.shader_stage == SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT);
+        auto const bindings = sortedBindings(scene.module);
+        REQUIRE(bindings.size() >= 2);
+        CHECK(bindings[0]->binding == 0);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::DeepSkyFrame));
+        REQUIRE(bindings[0]->block.member_count == 9);
+        CHECK(bindings[0]->block.members[5].offset == offsetof(helios::shaders::DeepSkyFrame, radiometry));
+        CHECK(bindings[0]->block.members[7].offset == offsetof(helios::shaders::DeepSkyFrame, quality));
+        CHECK(bindings[0]->block.members[8].offset == offsetof(helios::shaders::DeepSkyFrame, object));
+        CHECK(std::string(bindings[0]->block.members[8].name) == "object");
+        CHECK(bindings[1]->binding == 1);
+        CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    }
+    {
+        // The gas volume pass adds the emission volume, the point sources and
+        // the light each of them gets through the dust.
+        SpvModule volume;
+        REQUIRE(volume.load(*embeddedSpirv("emission_volume.slang.fragment.spv")));
+        auto const bindings = sortedBindings(volume.module);
+        REQUIRE(bindings.size() == 5);
+        CHECK(bindings[2]->binding == 3);
+        CHECK(bindings[2]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        CHECK(bindings[3]->binding == 4);
+        CHECK(bindings[3]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[3]->block.size == sizeof(helios::shaders::PointSourcesBlock));
+        CHECK(bindings[4]->binding == 5);
+        CHECK(bindings[4]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    }
+    {
+        // The pass that computes that light: frame, volume and sources only.
+        SpvModule dust;
+        REQUIRE(dust.load(*embeddedSpirv("point_source_dust.slang.fragment.spv")));
+        auto const bindings = sortedBindings(dust.module);
+        REQUIRE(bindings.size() == 3);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::DeepSkyFrame));
+        CHECK(bindings[1]->binding == 3);
+        CHECK(bindings[2]->binding == 4);
+        CHECK(bindings[2]->block.size == sizeof(helios::shaders::PointSourcesBlock));
+    }
+    {
+        // The galaxy: everything is computed per particle in the vertex stage.
+        SpvModule vertex;
+        REQUIRE(vertex.load(*embeddedSpirv("galaxy_stars.slang.vertex.spv")));
+        CHECK(vertex.module.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT);
+        CHECK_FALSE(declaresDrawParameters(*embeddedSpirv("galaxy_stars.slang.vertex.spv")));
+        auto const bindings = sortedBindings(vertex.module);
+        REQUIRE(bindings.size() == 3);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::DeepSkyFrame));
+        CHECK(bindings[1]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+        CHECK(bindings[2]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        SpvModule fragment;
+        REQUIRE(fragment.load(*embeddedSpirv("galaxy_stars.slang.fragment.spv")));
+        CHECK(sortedBindings(fragment.module).empty());
+    }
+    {
+        SpvModule accumulate;
+        REQUIRE(accumulate.load(*embeddedSpirv("hdr_accumulate.slang.fragment.spv")));
+        auto const bindings = sortedBindings(accumulate.module);
+        REQUIRE(bindings.size() == 1);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    }
+}
+
+TEST_CASE("gas-dynamics compute ABI") {
+    // Every pass reads the same parameter block at binding 0.
+    for (auto const& name : {"hydro_init.slang.compute.spv", "hydro_advance.slang.compute.spv",
+                             "hydro_speed.slang.compute.spv", "hydro_rays.slang.compute.spv",
+                             "hydro_shade.slang.compute.spv", "hydro_smooth.slang.compute.spv"}) {
+        CAPTURE(name);
+        SpvModule pass;
+        REQUIRE(pass.load(*embeddedSpirv(name)));
+        CHECK(pass.module.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT);
+        auto const bindings = sortedBindings(pass.module);
+        REQUIRE(!bindings.empty());
+        CHECK(bindings[0]->binding == 0);
+        CHECK(bindings[0]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        CHECK(bindings[0]->block.size == sizeof(helios::shaders::HydroParams));
+        REQUIRE(bindings[0]->block.member_count == 6);
+        CHECK(bindings[0]->block.members[3].offset == offsetof(helios::shaders::HydroParams, source));
+        CHECK(bindings[0]->block.members[4].offset == offsetof(helios::shaders::HydroParams, shade));
+    }
+    {
+        // The time step: two states in, one state out, and the radiation field.
+        SpvModule advance;
+        REQUIRE(advance.load(*embeddedSpirv("hydro_advance.slang.compute.spv")));
+        auto const bindings = sortedBindings(advance.module);
+        REQUIRE(bindings.size() == 8);
+        for (std::size_t index = 1; index <= 4; ++index) {
+            CHECK(bindings[index]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+        }
+        CHECK(bindings[5]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+        CHECK(bindings[6]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+        CHECK(bindings[7]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     }
 }

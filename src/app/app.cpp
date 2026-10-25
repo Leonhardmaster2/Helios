@@ -78,9 +78,10 @@ int runWindowed(CliOptions const& options) {
         HELIOS_ZONE_SCOPED_NAMED("app-loop");
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
+            renderer->processEvent(event);
             if (event.type == SDL_EVENT_QUIT) {
                 running = false;
-            } else if (event.type == SDL_EVENT_KEY_DOWN) {
+            } else if (event.type == SDL_EVENT_KEY_DOWN && !renderer->wantsKeyboardCapture()) {
                 if (event.key.key == SDLK_ESCAPE || event.key.key == SDLK_Q) {
                     running = false;
                 } else if (event.key.key == SDLK_F11) {
@@ -116,8 +117,8 @@ int runWindowed(CliOptions const& options) {
         if (!keep_going) {
             running = false;
         }
-        last_cpu_ms = renderer->stats().cpu_frame_ms.max();
-        last_gpu_ms = renderer->stats().gpu_frame_ms.count() > 0 ? renderer->stats().gpu_frame_ms.max() : 0.0;
+        last_cpu_ms = renderer->stats().cpu_frame_ms.latest();
+        last_gpu_ms = renderer->stats().gpu_frame_ms.latest();
         if (keep_going) {
             ++frame_count; // rendered frames only (renderFrame() stops at max_frames)
         }

@@ -132,9 +132,9 @@ core::Result<std::unique_ptr<Instance>> Instance::create(InstanceOptions const& 
     VkApplicationInfo app_info{};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pApplicationName = options.app_name.c_str();
-    app_info.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
+    app_info.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
     app_info.pEngineName = "Helios";
-    app_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
+    app_info.engineVersion = VK_MAKE_VERSION(0, 0, 1);
     app_info.apiVersion = std::min(options.api_version, instance->instance_version_);
 
     VkInstanceCreateInfo create_info{};

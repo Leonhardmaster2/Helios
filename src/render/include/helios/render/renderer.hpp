@@ -14,6 +14,7 @@
 #include <string>
 
 struct SDL_Window;
+union SDL_Event;
 
 namespace helios::render {
 
@@ -46,6 +47,13 @@ class Renderer {
     // Renders one frame; returns false when the loop should stop
     // (window closed, max_frames reached, device loss).
     [[nodiscard]] bool renderFrame();
+
+    // Every SDL event is forwarded to ImGui before app-level camera/control
+    // handling.  The capture accessors let the app avoid steering the scene
+    // while the user edits a widget.
+    void processEvent(SDL_Event const& event);
+    [[nodiscard]] bool wantsKeyboardCapture() const noexcept;
+    [[nodiscard]] bool wantsMouseCapture() const noexcept;
 
     [[nodiscard]] RendererStats const& stats() const noexcept {
         return stats_;

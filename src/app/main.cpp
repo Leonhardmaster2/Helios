@@ -5,6 +5,7 @@
 #include "helios/app/cli.hpp"
 #include "helios/app/headless.hpp"
 #include "helios/app/precision_lab.hpp"
+#include "helios/app/precision_lab_gpu.hpp"
 #include "helios/core/log.hpp"
 #include "helios/version.hpp"
 
@@ -95,6 +96,9 @@ int main(int argc, char** argv) {
     }
     if (options.precision_lab) {
         return helios::app::runPrecisionLab(options);
+    }
+    if (options.precision_lab_gpu) {
+        return helios::app::runPrecisionLabGpu(options);
     }
     return helios::app::runWindowed(options);
 }

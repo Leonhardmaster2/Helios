@@ -1,8 +1,10 @@
 # Documentation index
 
-This is the front door for Helios's design documentation. Helios is currently a **design-only repository**: documents can describe an accepted direction, but no design is implemented or validated until source code and evidence exist.
+This is the front door for Helios's design and implementation documentation. Source and tests now
+exist, but each claim still keeps an explicit proposed/implemented/validated status; source code
+alone does not promote a result to validated.
 
-Last updated: 12 July 2026.
+Last updated: 25 October 2026.
 
 ## Status vocabulary
 
@@ -15,7 +17,10 @@ Every important claim should be understood through one of these states:
 | **Implemented** | Present in source code and exercised by at least one automated or manual path |
 | **Validated** | Meets a recorded acceptance threshold on named hardware/data, with evidence |
 
-Unless a document explicitly says otherwise, product scope and logged decisions are **accepted**, architecture details are **proposed**, and implementation/performance claims are **not started**.
+Unless a document explicitly says otherwise, product scope and logged decisions are **accepted**
+and the full v1 architecture remains **proposed**. The narrower v0.0.1 implementation state and
+its remaining visual acceptance gate are recorded in [V0_0_1_MVP.md](V0_0_1_MVP.md) and the
+root [README](../README.md); no performance claim becomes validated without captured evidence.
 
 ## Source-of-truth hierarchy
 
@@ -27,6 +32,8 @@ When two documents disagree, use this ownership order rather than guessing:
 | What is the current status and what should a newcomer read? | [README.md](../README.md) and this index |
 | In what order will work ship? | [ROADMAP.md](../ROADMAP.md) |
 | How is the software intended to work? | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| What does the first integrated MVP promise? | [V0_0_1_MVP.md](V0_0_1_MVP.md) |
+| What is new, and what is explicitly not claimed, in v0.0.1? | [RELEASE_NOTES_v0.0.1.md](RELEASE_NOTES_v0.0.1.md) |
 | Why was a contested choice made? | [DECISIONS.md](DECISIONS.md) |
 | What exact claim must be proved? | [VALIDATION.md](VALIDATION.md) |
 | What data is used and what may we say about it? | [DATA_AND_PROVENANCE.md](DATA_AND_PROVENANCE.md) |
@@ -50,12 +57,13 @@ A decision record can constrain architecture, but it does not silently add produ
 ### I want to implement it
 
 1. [M0_HANDOVER.md](M0_HANDOVER.md) — full M0 engineering record: what was built, why, every bug + root cause, verification matrix, pitfalls, and the M1 start guide
-2. [ARCHITECTURE.md](ARCHITECTURE.md)
-2. [DECISIONS.md](DECISIONS.md)
-3. [VALIDATION.md](VALIDATION.md)
-4. [SUPPORT.md](SUPPORT.md)
-5. [DATA_AND_PROVENANCE.md](DATA_AND_PROVENANCE.md)
-6. [CONTRIBUTING.md](../CONTRIBUTING.md)
+2. [V0_0_1_MVP.md](V0_0_1_MVP.md)
+3. [ARCHITECTURE.md](ARCHITECTURE.md)
+4. [DECISIONS.md](DECISIONS.md)
+5. [VALIDATION.md](VALIDATION.md)
+6. [SUPPORT.md](SUPPORT.md)
+7. [DATA_AND_PROVENANCE.md](DATA_AND_PROVENANCE.md)
+8. [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ### I want to evaluate the scientific or data claims
 
@@ -77,7 +85,7 @@ CONTRIBUTING.md              current contribution policy
 LICENSE                      root AGPL-3.0 text; see LICENSING for the current file matrix
 LICENSING.md                 draft plain-language licensing policy
 CLA.md                       unreviewed contributor-agreement draft
-THIRD_PARTY_NOTICES.md       software dependency notices (empty today)
+THIRD_PARTY_NOTICES.md       software dependency versions, pins, licences, and usage
 assets/
   banner.png                 project banner
 docs/
@@ -90,9 +98,10 @@ docs/
   DATA_AND_PROVENANCE.md     data classification and manifest contract
   SUPPORT.md                 platform, GPU, and performance policy
   GLOSSARY.md                domain terminology
+  V0_0_1_MVP.md              integrated planet/LOD/black-hole MVP contract
 ```
 
-Directories expected at Milestone 0, but not present today:
+Implemented source directories:
 
 ```text
 src/          application and library sources
@@ -100,6 +109,8 @@ shaders/      Slang sources and shader ABI tests
 tools/        offline data/catalog bakers
 tests/        unit, property, integration, and numeric tests
 cmake/        build helpers and dependency pins
+examples/     independent planet, terrain, precision, and black-hole labs
+third_party/  vendored code plus the recursive DiligentEngine fork submodule
 data/         small manifests only; large datasets stay external
 evidence/     generated milestone reports or links to release artifacts
 ```

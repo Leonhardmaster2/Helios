@@ -8,11 +8,11 @@
 
 namespace helios {
 
-// Version of the Helios engine (semantic). Milestone-0 skeleton: 0.1.0.
+// Version of the Helios engine (semantic). First viable demo: 0.0.1.
 struct HeliosVersion {
     std::uint32_t major = 0;
-    std::uint32_t minor = 1;
-    std::uint32_t patch = 0;
+    std::uint32_t minor = 0;
+    std::uint32_t patch = 1;
 };
 
 // Current engine version.

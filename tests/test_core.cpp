@@ -22,7 +22,8 @@ using namespace helios::core;
 TEST_CASE("version basics") {
     const helios::HeliosVersion v = helios::heliosVersion();
     CHECK(v.major == 0);
-    CHECK(v.minor == 1);
+    CHECK(v.minor == 0);
+    CHECK(v.patch == 1);
     CHECK_FALSE(helios::heliosGitHash().empty());
     CHECK_FALSE(helios::heliosVersionString().empty());
 }
@@ -160,6 +161,33 @@ TEST_CASE("frame stats percentiles") {
     CHECK(stats.max() == doctest::Approx(0.100));
     CHECK(stats.min() == doctest::Approx(0.001));
     CHECK(stats.average() == doctest::Approx(0.0505));
+    CHECK(stats.latest() == doctest::Approx(0.100));
     CHECK(FrameStats().count() == 0);
     CHECK(FrameStats().max() == doctest::Approx(0.0));
+    CHECK(FrameStats().latest() == doctest::Approx(0.0));
+}
+
+TEST_CASE("frame stats rolling window replaces old samples") {
+    FrameStats stats(3);
+    stats.add(1.0);
+    stats.add(2.0);
+    stats.add(3.0);
+    CHECK(stats.average() == doctest::Approx(2.0));
+    CHECK(stats.latest() == doctest::Approx(3.0));
+
+    stats.add(7.0); // window is now {7, 2, 3}
+    CHECK(stats.count() == 3);
+    CHECK(stats.min() == doctest::Approx(2.0));
+    CHECK(stats.max() == doctest::Approx(7.0));
+    CHECK(stats.average() == doctest::Approx(4.0));
+    CHECK(stats.latest() == doctest::Approx(7.0));
+
+    stats.add(8.0); // window is now {7, 8, 3}
+    CHECK(stats.average() == doctest::Approx(6.0));
+    CHECK(stats.latest() == doctest::Approx(8.0));
+
+    FrameStats zero_capacity(0);
+    zero_capacity.add(5.0);
+    CHECK(zero_capacity.count() == 1);
+    CHECK(zero_capacity.latest() == doctest::Approx(5.0));
 }

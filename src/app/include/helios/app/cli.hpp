@@ -12,7 +12,8 @@ namespace helios::app {
 struct CliOptions {
     bool show_help = false;
     bool headless_smoke = false; // --headless-smoke (no window/swapchain)
-    bool precision_lab = false;  // --precision-lab (M1 CPU evidence route)
+    bool precision_lab = false;      // --precision-lab (M1 CPU evidence route)
+    bool precision_lab_gpu = false;  // --precision-lab-gpu (M1 GPU render route)
     bool windowed_smoke = false; // --smoke (windowed capability scene)
     std::uint32_t width = 1280;
     std::uint32_t height = 720;

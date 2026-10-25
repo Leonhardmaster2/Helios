@@ -133,7 +133,7 @@ TEST_CASE("data class strings") {
 
 TEST_CASE("report schemas serialize") {
     EnvironmentInfo env;
-    env.helios_version = "0.1.0";
+    env.helios_version = "0.0.1";
     env.helios_git_hash = "deadbeef";
     env.os_name = "test-os";
     env.resolution = "640x480";

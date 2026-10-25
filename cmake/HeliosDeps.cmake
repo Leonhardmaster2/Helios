@@ -24,6 +24,28 @@ set(SDL_STATIC ON CACHE BOOL "" FORCE)
 set(SDL_TEST OFF CACHE BOOL "" FORCE)
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+# The v0.0.1 host uses SDL only for windows, events, and one Vulkan-backed
+# diagnostic texture viewer. Keep unrelated media/device subsystems out of the
+# engine build.
+set(SDL_AUDIO OFF CACHE BOOL "" FORCE)
+set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
+set(SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
+set(SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+set(SDL_SENSOR OFF CACHE BOOL "" FORCE)
+set(SDL_DIALOG OFF CACHE BOOL "" FORCE)
+set(SDL_TRAY OFF CACHE BOOL "" FORCE)
+set(SDL_POWER OFF CACHE BOOL "" FORCE)
+# Helios owns presentation through Vulkan.  Keep SDL's optional renderer
+# fallback Vulkan-only too, so an auxiliary viewer can never silently select
+# a Direct3D or OpenGL renderer on Windows.
+set(SDL_RENDER_D3D OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER_D3D11 OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER_D3D12 OFF CACHE BOOL "" FORCE)
+set(SDL_GPU OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+set(SDL_OPENGL OFF CACHE BOOL "" FORCE)
+set(SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER_VULKAN ON CACHE BOOL "" FORCE)
 
 # --- Vulkan-Headers (Apache-2.0) -------------------------------------------
 FetchContent_Declare(VulkanHeaders

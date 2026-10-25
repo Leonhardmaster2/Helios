@@ -20,7 +20,7 @@ namespace helios::assets {
 
 // ---- environment/scenario manifest (common to all reports) ----------------
 struct EnvironmentInfo {
-    std::string helios_version;  // e.g. "0.1.0"
+    std::string helios_version;  // e.g. "0.0.1"
     std::string helios_git_hash; // build commit
     std::string build_type;      // Debug/RelWithDebInfo/Release
     std::string compiler;        // "MSVC 19.44.35228", "GCC 13.2", ...

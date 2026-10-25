@@ -20,9 +20,14 @@ namespace {
 struct FrameHistory {
     std::array<float, 120> samples{};
     std::size_t count = 0;
+    std::size_t next = 0;
     void add(double ms) {
-        if (count < samples.size())
-            samples[count++] = static_cast<float>(ms);
+        samples[next] = static_cast<float>(ms);
+        next = (next + 1) % samples.size();
+        count = std::min(count + 1, samples.size());
+    }
+    [[nodiscard]] int plotOffset() const noexcept {
+        return count == samples.size() ? static_cast<int>(next) : 0;
     }
 };
 FrameHistory g_history;
@@ -48,11 +53,16 @@ void Renderer::drawDebugUi() {
     ImGui::Text("Depth: %s | validation errors: %u, warnings: %u", ui.depth_choice.c_str(),
                 ui.validation_errors, ui.validation_warnings);
     ImGui::Separator();
-    ImGui::Text("Frame %llu | CPU %.3f ms | GPU %.3f ms", static_cast<unsigned long long>(ui.frame_index),
-                ui.cpu_frame_ms, ui.gpu_frame_ms);
+    const double fps = ui.cpu_frame_ms > 0.0 ? 1000.0 / ui.cpu_frame_ms : 0.0;
+    ImGui::Text("Frame %llu | FPS %.1f | CPU %.3f ms | GPU %.3f ms",
+                static_cast<unsigned long long>(ui.frame_index), fps, ui.cpu_frame_ms, ui.gpu_frame_ms);
+    drawPercentileTable("CPU rolling", stats_.cpu_frame_ms);
+    if (stats_.gpu_frame_ms.count() > 0) {
+        drawPercentileTable("GPU rolling", stats_.gpu_frame_ms);
+    }
     if (!g_history.samples.empty()) {
-        ImGui::PlotLines("CPU ms", g_history.samples.data(), static_cast<int>(g_history.count), 0, nullptr,
-                         FLT_MAX, FLT_MAX, ImVec2(0, 60));
+        ImGui::PlotLines("CPU ms", g_history.samples.data(), static_cast<int>(g_history.count),
+                         g_history.plotOffset(), nullptr, FLT_MAX, FLT_MAX, ImVec2(0, 60));
     }
     if (!ui.note.empty()) {
         ImGui::Text("Note: %s", ui.note.c_str());

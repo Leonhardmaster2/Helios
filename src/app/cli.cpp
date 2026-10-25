@@ -43,6 +43,8 @@ CliOptions parseCli(int argc, char** argv) {
             options.headless_smoke = true;
         } else if (arg == "--precision-lab") {
             options.precision_lab = true;
+        } else if (arg == "--precision-lab-gpu") {
+            options.precision_lab_gpu = true;
         } else if (arg == "--smoke") {
             options.windowed_smoke = true;
         } else if (arg == "--disable-validation") {
@@ -100,6 +102,10 @@ Modes:
   --precision-lab           M1 precision laboratory: deterministic CPU route
                             measuring frame transforms, reparenting, jitter,
                             and reversed-Z depth; writes evidence/m1 reports.
+  --precision-lab-gpu       M1 GPU precision lab: renders the synthetic route
+                            through the real Vulkan path (offscreen + PNG
+                            captures + precision_gpu.json). Add --windowed
+                            to watch the route in an SDL viewer.
   --smoke                   Windowed smoke scene (same as default).
 
 Options:

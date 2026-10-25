@@ -1,11 +1,10 @@
 # Generated at configure time from cmake/gen_shader_embed_impl.in.
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (c) 2026 the Helios authors and contributors
-set(HELIOS_SHADER_DIR "@shader_out_dir@")
 set(HELIOS_EMBED_HPP "@embed_hpp@")
 set(HELIOS_EMBED_CPP "@embed_cpp@")
 
-file(GLOB HELIOS_SPV_FILES "${HELIOS_SHADER_DIR}/*.spv")
+set(HELIOS_SPV_FILES "@shader_spv_outputs@")
 list(SORT HELIOS_SPV_FILES)
 list(LENGTH HELIOS_SPV_FILES HELIOS_SPV_COUNT)
 
@@ -33,16 +32,10 @@ foreach(spv IN LISTS HELIOS_SPV_FILES)
   string(REPLACE "." "_" sym "${fname}")
   string(APPEND cpp_lines "static unsigned char const k${sym}[] = {\n")
   file(READ "${spv}" hex HEX)
-  string(LENGTH "${hex}" hex_len)
-  set(byte_index 0)
-  while(byte_index LESS hex_len)
-    string(SUBSTRING "${hex}" ${byte_index} 2 byte)
-    string(APPEND cpp_lines "    0x${byte},")
-    math(EXPR byte_index "${byte_index} + 2")
-    if(NOT byte_index LESS hex_len)
-      string(APPEND cpp_lines "\n")
-    endif()
-  endwhile()
+  # One regex pass over the hex dump: a per-byte SUBSTRING loop is quadratic
+  # in the file size and took minutes for the larger shaders.
+  string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," bytes "${hex}")
+  string(APPEND cpp_lines "    ${bytes}\n")
   string(APPEND cpp_lines "};\n")
   string(APPEND array_entries "    {\"${fname}\", k${sym}, sizeof(k${sym})},\n")
 endforeach()

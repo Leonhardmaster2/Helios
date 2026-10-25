@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Helios Deep-Sky Lab</title>
+<meta name="description" content="Helios is a real-time Vulkan engine whose nebulae, galaxies, pulsars, black holes and planets are the live state of simulations and exact light paths, never painted.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: full-bleed 4K footage with the record laid over it, a mosaic of
+   every variant at 4K with a lightbox, and a star field behind the page. */
+:root {
+  --bg: #050608;
+  --bg-2: #0b0d14;
+  --ink: #f2eee6;
+  --ink-soft: #b7b8c2;
+  --ink-faint: #767884;
+  --rule: rgba(255, 255, 255, 0.12);
+  --accent: #e6b35a;
+  --halpha: #e0485c;
+  --oiii: #5fc9a9;
+  --sea: #5f9dff;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Instrument Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --gutter: clamp(16px, 4vw, 56px);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.55;
+  padding-block: 0 3rem; padding-inline: var(--gutter);
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+#stars { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.9; }
+main, header, footer { position: relative; z-index: 1; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; line-height: 1.02; text-wrap: balance; }
+h1 { font-size: clamp(4.2rem, 13vw, 11rem); font-weight: 750; letter-spacing: -0.035em; font-variation-settings: "opsz" 96; }
+h2 { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 650; letter-spacing: -0.025em; }
+h3 { font-size: clamp(1.5rem, 2.6vw, 2.1rem); font-weight: 600; letter-spacing: -0.015em; }
+p { margin: 0; }
+.bleed { margin-inline: calc(-1 * var(--gutter)); }
+video, img { max-width: 100%; }
+
+/* top bar */
+.top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 1.1rem var(--gutter); font-size: 0.95rem;
+}
+.top .name { font-family: var(--display); font-weight: 700; font-size: 1.3rem; letter-spacing: -0.02em; color: var(--ink); }
+.top nav { display: flex; gap: 1.4rem; flex-wrap: wrap; }
+.top nav a { color: var(--ink-soft); text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+
+/* hero */
+.hero { position: relative; min-height: 92vh; display: grid; align-items: end; overflow: hidden; background: #000; }
+.hero .backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
+.hero .veil { position: absolute; inset: 0; background:
+  linear-gradient(to top, rgba(5,6,8,0.96) 0%, rgba(5,6,8,0.5) 36%, rgba(5,6,8,0.05) 68%, rgba(5,6,8,0.35) 100%); }
+.hero .inner { position: relative; padding: 7rem var(--gutter) 2rem; display: grid; gap: 1.2rem; max-width: 1400px; }
+.hero .tag { font-family: var(--display); font-size: clamp(1.4rem, 2.8vw, 2.3rem); font-weight: 500; letter-spacing: -0.01em; color: var(--ink); }
+.hero .lede { font-size: clamp(1.02rem, 1.4vw, 1.2rem); color: var(--ink-soft); max-width: 62ch; }
+.actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.button {
+  display: inline-block; padding: 0.75rem 1.25rem; border: 1px solid rgba(255,255,255,0.35); border-radius: 999px;
+  color: var(--ink); text-decoration: none; font-weight: 500; backdrop-filter: blur(6px); background: rgba(5,6,8,0.35);
+}
+.button.primary { background: var(--ink); color: #0a0b10; border-color: var(--ink); }
+.button:hover { border-color: var(--accent); }
+.hero .where { font-size: 0.85rem; color: var(--ink-faint); }
+
+/* strip of objects under the hero */
+.strip { display: grid; grid-template-columns: repeat(8, minmax(150px, 1fr)); gap: 0.5rem; overflow-x: auto; padding: 0.75rem 0 0.25rem; scrollbar-width: thin; }
+.strip a { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; background: #000; text-decoration: none; }
+.strip img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 300ms ease; }
+.strip a:hover img { transform: scale(1.05); }
+.strip span { position: absolute; left: 0.55rem; bottom: 0.45rem; font-size: 0.78rem; color: #f2eee6; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
+
+/* numbers at a glance */
+.glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-top: 2.5rem; }
+.glance div { padding: 1.1rem 1.1rem 1.1rem 0; border-right: 1px solid var(--rule); min-width: 0; }
+.glance div:last-child { border-right: 0; }
+.glance b { display: block; font-family: var(--display); font-size: 1.9rem; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.glance span { color: var(--ink-faint); font-size: 0.9rem; }
+
+/* object sections: the footage keeps its 16:9 frame at full width */
+.object { position: relative; margin-top: 4rem; display: grid; align-items: center; overflow: hidden; background: #000; aspect-ratio: 16 / 9; }
+.object .footage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.object .shade { position: absolute; inset: 0; }
+.object.left .shade { background: linear-gradient(to right, rgba(5,6,8,0.9) 0%, rgba(5,6,8,0.7) 30%, rgba(5,6,8,0.0) 62%); }
+.object.right .shade { background: linear-gradient(to left, rgba(5,6,8,0.9) 0%, rgba(5,6,8,0.7) 30%, rgba(5,6,8,0.0) 62%); }
+.object .record { position: relative; padding: 3rem var(--gutter); max-width: 580px; display: grid; gap: 0.9rem; }
+.object.right .record { justify-self: end; }
+.object .kicker { font-size: 0.9rem; color: var(--accent); font-weight: 500; }
+.object .record p { color: var(--ink-soft); }
+.object dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.3rem 1rem; margin: 0.4rem 0 0; font-size: 0.93rem; }
+.object dt { color: var(--ink-faint); }
+.object dd { margin: 0; color: var(--ink); min-width: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  .object { aspect-ratio: auto; align-items: end; }
+  .object .footage { position: relative; aspect-ratio: 16 / 9; height: auto; }
+  .object .shade { display: none; }
+  .object .record { padding: 1.25rem var(--gutter) 0; max-width: 70ch; justify-self: start; }
+}
+
+/* mosaic */
+.section-head { display: grid; gap: 0.8rem; max-width: 72ch; margin-top: 5rem; }
+.section-head p { color: var(--ink-soft); font-size: 1.05rem; }
+.filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+.filters button {
+  font: inherit; font-size: 0.9rem; padding: 0.45rem 0.9rem; border-radius: 999px; cursor: pointer;
+  background: transparent; color: var(--ink-soft); border: 1px solid var(--rule);
+}
+.filters button[aria-pressed="true"] { background: var(--ink); color: #0a0b10; border-color: var(--ink); }
+.mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.5rem; margin-top: 1.25rem; }
+.mosaic figure { position: relative; margin: 0; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 4px; background: #000; cursor: zoom-in; }
+.mosaic figure[hidden] { display: none; }
+.mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 400ms ease; }
+.mosaic figure:hover img { transform: scale(1.05); }
+.mosaic figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 1.4rem 0.7rem 0.55rem; font-size: 0.85rem; color: #f2eee6;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0)); display: flex; justify-content: space-between; gap: 0.5rem;
+}
+.mosaic figcaption i { font-style: normal; color: var(--ink-faint); }
+.lightbox { position: fixed; inset: 0; z-index: 10; background: rgba(2,3,5,0.96); display: grid; place-items: center; padding: 2rem; }
+.lightbox[hidden] { display: none; }
+.lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.lightbox button { position: absolute; top: 1rem; right: 1rem; font: inherit; padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid var(--rule); background: var(--bg-2); color: var(--ink); cursor: pointer; }
+.lightbox p { position: absolute; left: 1.5rem; bottom: 1rem; color: var(--ink-soft); font-size: 0.95rem; }
+
+/* method */
+.method { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem 2rem; margin-top: 1.5rem; }
+.method article { display: grid; gap: 0.55rem; padding-top: 1rem; border-top: 1px solid var(--rule); min-width: 0; }
+.method h3 { font-size: 1.25rem; }
+.method p { color: var(--ink-soft); font-size: 0.98rem; }
+
+/* ledger + table + build */
+.ledger { display: grid; gap: 0.8rem; margin-top: 1.5rem; max-width: 72ch; }
+.ledger p { color: var(--ink-soft); }
+.ledger p b { color: var(--ink); font-weight: 600; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem 3rem; margin-top: 1.5rem; }
+.two > div { min-width: 0; display: grid; gap: 1rem; align-content: start; }
+.tablewrap { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; font-size: 0.95rem; width: 100%; min-width: 420px; }
+th, td { text-align: left; padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { color: var(--ink-faint); font-weight: 500; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 6px; border-radius: 3px; background: var(--accent); opacity: 0.85; }
+.note { color: var(--ink-faint); font-size: 0.9rem; max-width: 70ch; }
+pre { margin: 0; padding: 1rem 1.2rem; background: var(--bg-2); border: 1px solid var(--rule); border-radius: 8px; overflow-x: auto; font-size: 0.9rem; line-height: 1.55; max-width: 100%; }
+code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.keys { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--ink-soft); font-size: 0.95rem; }
+.keys kbd { font: inherit; font-size: 0.85rem; padding: 0.15rem 0.5rem; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 5px; background: var(--bg-2); color: var(--ink); }
+
+footer { margin-top: 5rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--ink-faint); font-size: 0.9rem; display: grid; gap: 0.5rem; }
+footer p { max-width: 85ch; }
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<header class="top">
+  <span class="name">Helios</span>
+  <nav aria-label="Sections">
+    <a href="#objects">Objects</a>
+    <a href="#gallery">Variants</a>
+    <a href="#method">Method</a>
+    <a href="#assumed">Assumptions</a>
+    <a href="#performance">Frame times</a>
+    <a href="#build">Build</a>
+    <a href="https://github.com/Proceduralabs/Helios">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero bleed" aria-label="Helios">
+    <video class="backdrop footage" autoplay muted loop playsinline preload="auto" poster="media/black_hole.jpg" aria-label="A black hole with its accretion disk bent over and under the shadow by gravitational lensing, the camera slowly orbiting">
+      <source src="media/black_hole.mp4" type="video/mp4">
+    </video>
+    <div class="veil"></div>
+    <div class="inner">
+      <h1>Helios</h1>
+      <p class="tag">Nothing here is painted.</p>
+      <p class="lede">A real-time Vulkan engine in which every nebula, galaxy, pulsar, black hole and planet is the live state of a simulation or an exact light path through a physical model. The arms, pillars, shells and beams are what the physics made. The only things anyone chose are the starting conditions.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/Proceduralabs/Helios">Source on GitHub</a>
+        <a class="button" href="#objects">See the objects</a>
+        <a class="button" href="#build">Build it</a>
+      </div>
+      <p class="where">Behind this text: exact Schwarzschild geodesics around a black hole, rendered at 3840 by 2160. The far side of its disk is lensed over the top.</p>
+    </div>
+  </section>
+
+  <nav class="strip" aria-label="Objects">
+    <a href="#galaxy"><img src="media/stills/galaxy_milky-way.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Galaxy</span></a>
+    <a href="#pillars"><img src="media/stills/nebula_pillars.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Pillars</span></a>
+    <a href="#hii"><img src="media/stills/nebula_orion.jpg" alt="" loading="lazy" width="3840" height="2160"><span>H II region</span></a>
+    <a href="#remnant"><img src="media/stills/remnant_crab.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Remnant</span></a>
+    <a href="#pulsar"><img src="media/pulsar.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Pulsar</span></a>
+    <a href="#blackhole"><img src="media/stills/black_hole_cool-disk.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Black hole</span></a>
+    <a href="#earth"><img src="media/stills/planet_earth-like.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Earth-like</span></a>
+    <a href="#giant"><img src="media/stills/planet_ringed-gas-giant.jpg" alt="" loading="lazy" width="3840" height="2160"><span>Gas giant</span></a>
+  </nav>
+
+  <div class="glance" aria-label="At a glance">
+    <div><b>7</b><span>objects in one window</span></div>
+    <div><b>30</b><span>named presets after real classes of object</span></div>
+    <div><b>256³</b><span>gas cells, stretched so the centre is finest</span></div>
+    <div><b>2.2 M</b><span>star and gas particles in the galaxy</span></div>
+    <div><b>22</b><span>octaves of terrain, six-metre cells on Earth</span></div>
+    <div><b>4K</b><span>every frame on this page, straight from the engine</span></div>
+  </div>
+
+  <div id="objects">
+    <section class="object left bleed" id="galaxy">
+      <video class="footage" muted loop playsinline preload="none" poster="media/galaxy.jpg" aria-label="A disk galaxy with spiral arms and a bar, orbited slowly by the camera"><source src="media/galaxy.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">N-body, 900 million years in</p>
+        <h3>Disk galaxy</h3>
+        <p>Two million star and gas particles, gravity solved on a mesh, started as a smooth, featureless disk in equilibrium. Nobody drew the arms: swing-amplified density waves grew out of the particle noise, a bar formed, and the gas piled into the arms and turned into stars there. The colour is the age of the stars.</p>
+        <dl>
+          <dt>Modelled on</dt><dd>the Milky Way, Sb</dd>
+          <dt>Disk</dt><dd>4.5 × 10¹⁰ solar masses, Toomre Q 1.3, 180 km/s flat rotation</dd>
+          <dt>Other presets</dt><dd>barred SBb, flocculent Sc, early-type Sa</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object right bleed" id="pillars">
+      <video class="footage" muted loop playsinline preload="none" poster="media/nebula_pillars.jpg" aria-label="Pillars of dense gas lit from one side by a massive star, with a glowing ionised cavity"><source src="media/nebula_pillars.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">Gas dynamics on the GPU, 1.8 million years in</p>
+        <h3>Emission nebula, pillars</h3>
+        <p>A turbulent cloud of 900 atoms per cubic centimetre and a 55 solar-mass star placed inside it. Photo-ionisation and a MUSCL, HLLC solver run in compute shaders; the dense clumps shadow the gas behind them and are carved into pillars with bright rims, as the Eagle Nebula's were.</p>
+        <dl>
+          <dt>Modelled on</dt><dd>the Eagle Nebula, M16</dd>
+          <dt>Started as</dt><dd>a round, uniform cloud with 5 km/s turbulence</dd>
+          <dt>Colour</dt><dd>what the eye sees: H-alpha red, [O III] teal</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object left bleed" id="hii">
+      <video class="footage" muted loop playsinline preload="none" poster="media/nebula_orion.jpg" aria-label="An ionised cavity blown into a cloud by a hot star, with scattered starlight in the thin gas around it"><source src="media/nebula_orion.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">Gas dynamics on the GPU</p>
+        <h3>Emission nebula, H II region</h3>
+        <p>The same solver with a 40 solar-mass star in a thinner cloud. The ionisation front races out, the heated gas pushes a cavity open, and the thin medium around the grid scatters the star's light instead of ending at a wall. The solver is checked against Sod's shock tube and the Sedov–Taylor blast wave.</p>
+        <dl>
+          <dt>Modelled on</dt><dd>the Orion Nebula, M42</dd>
+          <dt>Surroundings</dt><dd>warm neutral medium at 0.5 cm⁻³, continued analytically beyond the grid</dd>
+          <dt>Other presets</dt><dd>blister and champagne flow, reflection nebula around a B star</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object right bleed" id="remnant">
+      <video class="footage" muted loop playsinline preload="none" poster="media/remnant_crab.jpg" aria-label="A supernova remnant with a filamentary shell and a bright synchrotron bubble blown by the pulsar inside"><source src="media/remnant_crab.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">Gas dynamics on the GPU, 970 years in</p>
+        <h3>Supernova remnant, pulsar-wind dominated</h3>
+        <p>Five solar masses of expanding ejecta, then a pulsar switched on in the middle. Its wind inflates a bubble that overtakes the ejecta from inside; Rayleigh–Taylor fingers grow at the contact, as in the Crab. The bubble shines by synchrotron, the shocked shell by Balmer and forbidden lines.</p>
+        <dl>
+          <dt>Modelled on</dt><dd>the Crab Nebula, M1</dd>
+          <dt>Other presets</dt><dd>core-collapse with pulsar, Type Ia in thin gas (Tycho), an old radiative shell (Cygnus Loop)</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object left bleed" id="pulsar">
+      <video class="footage" muted loop playsinline preload="none" poster="media/pulsar.jpg" aria-label="A rotating neutron star with the star field behind it bent into a ring by its gravity"><source src="media/pulsar.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">Exact light paths, one rotation</p>
+        <h3>Pulsar</h3>
+        <p>Light paths integrated through Schwarzschild spacetime around a magnetised star turning twenty times a second, its magnetic axis almost at right angles to its spin. The ring of smeared stars is the sky behind, bent around the star by its gravity. The dark belt is the current sheet of its wind, seen edge-on at the light cylinder.</p>
+        <dl>
+          <dt>Computed</dt><dd>geodesics, dipole magnetosphere, Goldreich–Julian outflow, split-monopole current sheet</dd>
+          <dt>States</dt><dd>young, millisecond, orthogonal, nearly aligned; magnetar and accreting for the neutron star</dd>
+          <dt>Bands</dt><dd>visible light or the X-ray band</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object right bleed" id="blackhole">
+      <video class="footage" muted loop playsinline preload="none" poster="media/black_hole.jpg" aria-label="A black hole with its thin disk bent over and under the shadow, the approaching side brighter"><source src="media/black_hole.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">Exact light paths</p>
+        <h3>Black hole</h3>
+        <p>Schwarzschild geodesics from every pixel. The arch over the shadow is the far side of the disk, lensed over the top; the ring inside is light that went around the hole once. The brighter side is the one coming towards you, beamed and blueshifted by its own motion.</p>
+        <dl>
+          <dt>Disk</dt><dd>Page–Thorne, peak temperature from mass and accretion rate</dd>
+          <dt>Shown</dt><dd>a cool disk, so its colour structure is visible</dd>
+          <dt>Other presets</dt><dd>stellar-mass X-ray binary, quasar disk, bare hole</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object left bleed" id="earth">
+      <video class="footage" muted loop playsinline preload="none" poster="media/planet_earth.jpg" aria-label="An Earth-like planet with continents, oceans, cloud fields and a blue limb, turning beneath the camera"><source src="media/planet_earth.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">From a billion metres to eye level</p>
+        <h3>Earth-like world</h3>
+        <p>A height field with the statistics of real terrain, evaluated identically on the CPU and the GPU down to six-metre cells, so the camera can descend from orbit to the ground without a loading screen. Above it an atmosphere scattered twice over, a cloud layer marched through, and a moon on its orbit.</p>
+        <dl>
+          <dt>Atmosphere</dt><dd>Rayleigh and Mie, multiple scattering from a precomputed table</dd>
+          <dt>Clouds</dt><dd>volumetric, lit as a two-stream slab, shadowing the ground</dd>
+          <dt>Terrain</dt><dd>bimodal hypsometry, ridged mountain belts, sediment-floored lowlands</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="object right bleed" id="giant">
+      <video class="footage" muted loop playsinline preload="none" poster="media/gas_giant.jpg" aria-label="A ringed gas giant with banded clouds, the planet's shadow across the rings and a dark gap in them"><source src="media/gas_giant.mp4" type="video/mp4"></video>
+      <div class="shade"></div>
+      <div class="record">
+        <p class="kicker">A planetary system</p>
+        <h3>Ringed gas giant</h3>
+        <p>Rings as a single-scattering slab whose gaps sit where the moons' resonances put them. The planet's shadow falls across the rings and theirs across the planet's southern hemisphere; four icy moons orbit with the mean motion the planet's mass gives them.</p>
+        <dl>
+          <dt>Rings</dt><dd>1.24 to 2.27 radii, the gap calibrated to the Cassini division</dd>
+          <dt>Rotation</dt><dd>10.6 hours; the sun moves with it</dd>
+          <dt>Other presets</dt><dd>desert world with two small moons, ice world</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <section id="gallery">
+    <div class="section-head">
+      <h2>Every preset, captured at 4K</h2>
+      <p>Each object has named presets after real classes of object: a set of initial conditions, or disk parameters, and a view that shows it. These are the engine's own 3840 by 2160 captures of all thirty, forty-eight jittered frames averaged each. Click one to see it full size.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filter the gallery">
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="nebula" aria-pressed="false">Nebulae</button>
+      <button type="button" data-filter="remnant" aria-pressed="false">Remnants</button>
+      <button type="button" data-filter="galaxy" aria-pressed="false">Galaxies</button>
+      <button type="button" data-filter="neutron" aria-pressed="false">Neutron stars</button>
+      <button type="button" data-filter="pulsar" aria-pressed="false">Pulsars</button>
+      <button type="button" data-filter="blackhole" aria-pressed="false">Black holes</button>
+      <button type="button" data-filter="planet" aria-pressed="false">Planets</button>
+    </div>
+    <div class="mosaic" id="mosaic">
+      <figure data-kind="nebula"><img src="media/stills/nebula_orion.jpg" alt="Orion-like H II region" loading="lazy" width="3840" height="2160"><figcaption>H II region, Orion-like <i>nebula</i></figcaption></figure>
+      <figure data-kind="nebula"><img src="media/stills/nebula_pillars.jpg" alt="Pillars nebula" loading="lazy" width="3840" height="2160"><figcaption>Pillars, Eagle-like <i>nebula</i></figcaption></figure>
+      <figure data-kind="nebula"><img src="media/stills/nebula_blister.jpg" alt="Blister nebula with a champagne flow" loading="lazy" width="3840" height="2160"><figcaption>Blister, champagne flow <i>nebula</i></figcaption></figure>
+      <figure data-kind="nebula"><img src="media/stills/nebula_reflection.jpg" alt="Reflection nebula around a B star" loading="lazy" width="3840" height="2160"><figcaption>Reflection, B star <i>nebula</i></figcaption></figure>
+      <figure data-kind="remnant"><img src="media/stills/remnant_core-collapse.jpg" alt="Core-collapse remnant with a pulsar" loading="lazy" width="3840" height="2160"><figcaption>Core-collapse with pulsar <i>remnant</i></figcaption></figure>
+      <figure data-kind="remnant"><img src="media/stills/remnant_type-ia.jpg" alt="Type Ia remnant in thin gas" loading="lazy" width="3840" height="2160"><figcaption>Type Ia, Tycho-like <i>remnant</i></figcaption></figure>
+      <figure data-kind="remnant"><img src="media/stills/remnant_crab.jpg" alt="Crab-like pulsar wind nebula" loading="lazy" width="3840" height="2160"><figcaption>Pulsar-wind nebula, Crab-like <i>remnant</i></figcaption></figure>
+      <figure data-kind="remnant"><img src="media/stills/remnant_radiative.jpg" alt="Old remnant with a radiative shell" loading="lazy" width="3840" height="2160"><figcaption>Radiative shell, Cygnus Loop-like <i>remnant</i></figcaption></figure>
+      <figure data-kind="galaxy"><img src="media/stills/galaxy_milky-way.jpg" alt="Milky-Way-like galaxy" loading="lazy" width="3840" height="2160"><figcaption>Milky-Way-like, Sb <i>galaxy</i></figcaption></figure>
+      <figure data-kind="galaxy"><img src="media/stills/galaxy_barred.jpg" alt="Barred galaxy" loading="lazy" width="3840" height="2160"><figcaption>Barred, SBb <i>galaxy</i></figcaption></figure>
+      <figure data-kind="galaxy"><img src="media/stills/galaxy_flocculent.jpg" alt="Flocculent gas-rich galaxy" loading="lazy" width="3840" height="2160"><figcaption>Flocculent, Sc <i>galaxy</i></figcaption></figure>
+      <figure data-kind="galaxy"><img src="media/stills/galaxy_early-type.jpg" alt="Early-type bulge-dominated galaxy" loading="lazy" width="3840" height="2160"><figcaption>Early-type, Sa <i>galaxy</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_isolated.jpg" alt="Isolated cooling neutron star" loading="lazy" width="3840" height="2160"><figcaption>Isolated, cooling <i>neutron star</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_young-pulsar.jpg" alt="Young pulsar" loading="lazy" width="3840" height="2160"><figcaption>Young pulsar <i>neutron star</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_millisecond-pulsar.jpg" alt="Millisecond pulsar" loading="lazy" width="3840" height="2160"><figcaption>Millisecond pulsar <i>neutron star</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_magnetar.jpg" alt="Magnetar" loading="lazy" width="3840" height="2160"><figcaption>Magnetar <i>neutron star</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_magnetar_xray.jpg" alt="Magnetar in the X-ray band" loading="lazy" width="3840" height="2160"><figcaption>Magnetar, X-ray band <i>neutron star</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_accreting.jpg" alt="Accreting neutron star" loading="lazy" width="3840" height="2160"><figcaption>Accreting, irradiated disk <i>neutron star</i></figcaption></figure>
+      <figure data-kind="neutron"><img src="media/stills/neutron_star_accreting_xray.jpg" alt="Accreting neutron star in the X-ray band" loading="lazy" width="3840" height="2160"><figcaption>Accreting, X-ray band <i>neutron star</i></figcaption></figure>
+      <figure data-kind="pulsar"><img src="media/stills/pulsar_young-pulsar.jpg" alt="Young pulsar" loading="lazy" width="3840" height="2160"><figcaption>Young <i>pulsar</i></figcaption></figure>
+      <figure data-kind="pulsar"><img src="media/stills/pulsar_orthogonal.jpg" alt="Orthogonal rotator" loading="lazy" width="3840" height="2160"><figcaption>Orthogonal rotator <i>pulsar</i></figcaption></figure>
+      <figure data-kind="pulsar"><img src="media/stills/pulsar_aligned.jpg" alt="Nearly aligned rotator" loading="lazy" width="3840" height="2160"><figcaption>Nearly aligned rotator <i>pulsar</i></figcaption></figure>
+      <figure data-kind="blackhole"><img src="media/stills/black_hole_cool-disk.jpg" alt="Black hole with a cool disk" loading="lazy" width="3840" height="2160"><figcaption>Cool disk <i>black hole</i></figcaption></figure>
+      <figure data-kind="blackhole"><img src="media/stills/black_hole_stellar.jpg" alt="Stellar-mass black hole X-ray binary" loading="lazy" width="3840" height="2160"><figcaption>Stellar-mass X-ray binary <i>black hole</i></figcaption></figure>
+      <figure data-kind="blackhole"><img src="media/stills/black_hole_supermassive.jpg" alt="Supermassive black hole with a quasar disk" loading="lazy" width="3840" height="2160"><figcaption>Supermassive, quasar disk <i>black hole</i></figcaption></figure>
+      <figure data-kind="blackhole"><img src="media/stills/black_hole_bare.jpg" alt="Bare black hole lensing the star field" loading="lazy" width="3840" height="2160"><figcaption>Bare hole, lensed sky <i>black hole</i></figcaption></figure>
+      <figure data-kind="planet"><img src="media/stills/planet_earth-like.jpg" alt="Earth-like world from orbit" loading="lazy" width="3840" height="2160"><figcaption>Earth-like world <i>planet</i></figcaption></figure>
+      <figure data-kind="planet"><img src="media/stills/planet_desert-world.jpg" alt="Desert world" loading="lazy" width="3840" height="2160"><figcaption>Desert world, Mars-like <i>planet</i></figcaption></figure>
+      <figure data-kind="planet"><img src="media/stills/planet_ice-world.jpg" alt="Ice world" loading="lazy" width="3840" height="2160"><figcaption>Ice world <i>planet</i></figcaption></figure>
+      <figure data-kind="planet"><img src="media/stills/planet_ringed-gas-giant.jpg" alt="Ringed gas giant" loading="lazy" width="3840" height="2160"><figcaption>Ringed gas giant, Saturn-like <i>planet</i></figcaption></figure>
+    </div>
+  </section>
+
+  <section id="method">
+    <div class="section-head">
+      <h2>How it is computed</h2>
+      <p>C++20 on Vulkan through Diligent Engine, shaders in Slang compiled offline. Each object is its own model with its own solver; one display chain averages still frames, adds glare, and tone-maps all of them the same way.</p>
+    </div>
+    <div class="method">
+      <article><h3>Gas dynamics</h3><p>MUSCL reconstruction, HLLC fluxes and SSP Runge–Kutta stepping in compute shaders, on a grid stretched so its cells are finest at the centre. Photo-ionisation, radiative cooling of swept-up gas, and a pulsar-wind source where the recipe has one. The display continues the thin medium beyond the grid analytically, so no face of the box is ever visible.</p></article>
+      <article><h3>N-body galaxy</h3><p>Particle-mesh gravity: cloud-in-cell deposit, FFT convolution with the softened kernel, leapfrog steps, on its own CPU thread. The disk starts in equilibrium at Toomre Q of 1.3; arms and bar grow from the particle noise, and gas forms stars where it piles up, with feedback pushing back.</p></article>
+      <article><h3>Exact light paths</h3><p>Schwarzschild geodesics integrated per pixel for the neutron star, the pulsar and the black hole, with Doppler beaming and gravitational redshift applied to every emitting element along the ray, in visible light or the X-ray band.</p></article>
+      <article><h3>Cube-sphere terrain</h3><p>A quadtree of tiles chosen by screen-space error, camera-relative double precision on the CPU and patch-local lattice anchors on the GPU, so octave 22 of the noise is exact at eye level from a camera that started a billion metres away.</p></article>
+      <article><h3>Sky, clouds, rings</h3><p>Single scattering along the ray plus a multiple-scattering table after Hillaire 2020. Clouds as a drifting cover field eroded by billows, lit by the two-stream reflectance of a conservative slab. Rings as a slab with Lindblad gaps, shadowing and shadowed.</p></article>
+      <article><h3>Presets and quality</h3><p>Named presets after real classes of object, each with a view that shows it. A quality preset sets grid size, ray-march samples, particle counts and level of detail: Performance, Balanced, Ultra.</p></article>
+    </div>
+  </section>
+
+  <section id="assumed">
+    <div class="section-head">
+      <h2>What is assumed rather than computed</h2>
+      <p>The honest list. Everything here is a choice; everything above follows from the physics.</p>
+    </div>
+    <div class="ledger">
+      <p><b>Initial conditions.</b> The galaxy's mass model, the cloud's size and turbulence, the explosion's energy, the planet's hypsometry. Nothing that follows from them is prescribed.</p>
+      <p><b>Brightness scales.</b> Where no absolute calibration is carried through, the relative strength of emission processes is set by hand: scattered starlight in the nebula, bremsstrahlung and synchrotron in the remnant, the neutron star's non-thermal components. The spatial pattern of each is computed.</p>
+      <p><b>Resolution.</b> Ionisation fronts, the knots that cooled ejecta collapse into, and the radiative shell of an old remnant are smaller than a cell and are represented by a floor or a closure named in the source.</p>
+      <p><b>The planet.</b> Its relief has the statistics of real terrain but is not a simulation of the processes that shape one; the cloud base is a height above the sea level; moons cast no eclipses yet.</p>
+    </div>
+  </section>
+
+  <section id="performance">
+    <div class="section-head">
+      <h2>Frame times at 4K</h2>
+      <p>Windowless benchmark at 3840 by 2160 on an RTX 5080, Balanced preset, the camera moving so nothing is cached between frames.</p>
+    </div>
+    <div class="two">
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Object</th><th>Frame</th><th>Rate</th><th aria-label="Relative frame time"></th></tr></thead>
+          <tbody>
+            <tr><td>Ringed gas giant</td><td class="num">1.3 ms</td><td class="num">781 fps</td><td><div class="bar" style="width:13%"></div></td></tr>
+            <tr><td>Earth-like world from orbit</td><td class="num">2.4 ms</td><td class="num">423 fps</td><td><div class="bar" style="width:23%"></div></td></tr>
+            <tr><td>Desert world from orbit</td><td class="num">2.9 ms</td><td class="num">346 fps</td><td><div class="bar" style="width:28%"></div></td></tr>
+            <tr><td>Black hole</td><td class="num">3.9 ms</td><td class="num">255 fps</td><td><div class="bar" style="width:38%"></div></td></tr>
+            <tr><td>Galaxy, 2.16 million particles</td><td class="num">6.8 ms</td><td class="num">146 fps</td><td><div class="bar" style="width:67%"></div></td></tr>
+            <tr><td>Earth-like world, 400 km up</td><td class="num">7.5 ms</td><td class="num">134 fps</td><td><div class="bar" style="width:73%"></div></td></tr>
+            <tr><td>Pulsar, young</td><td class="num">8.8 ms</td><td class="num">114 fps</td><td><div class="bar" style="width:86%"></div></td></tr>
+            <tr><td>Neutron star, isolated</td><td class="num">8.8 ms</td><td class="num">114 fps</td><td><div class="bar" style="width:86%"></div></td></tr>
+            <tr><td>Supernova remnant, 256³, Crab-like</td><td class="num">9.3 ms</td><td class="num">107 fps</td><td><div class="bar" style="width:91%"></div></td></tr>
+            <tr><td>Emission nebula, 256³</td><td class="num">10.2 ms</td><td class="num">98 fps</td><td><div class="bar" style="width:100%"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="note">The gas objects run their simulation on the GPU in the same frame, within a five-millisecond budget; the galaxy integrates on a CPU thread and the renderer draws whatever state is newest. At eye level under a cloud deck the Earth-like world costs 22 ms (45 fps) at 4K: the cloud march dominates there.</p>
+        <p class="note">Ultra draws the Earth-like world from orbit at 3.9 ms (255 fps) and runs the nebula on a 320³ grid at 12.8 ms; Performance runs it on 192³ at 4.5 ms.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <div class="section-head">
+      <h2>Build and run it</h2>
+      <p>Windows, Visual Studio 2022 and a Vulkan 1.3 GPU. Dependencies are pinned and fetched by a script; Diligent Engine is a submodule.</p>
+    </div>
+    <div class="two">
+      <div>
+        <pre><code>git clone --recursive https://github.com/Proceduralabs/Helios.git
+cd Helios
+node scripts/fetch_deps.mjs --update-lock --write-cmake
+cmake --preset windows-dev
+cmake --build --preset windows-dev
+ctest --preset windows-dev</code></pre>
+        <pre><code>helios_deep_sky_lab --object galaxy
+helios_deep_sky_lab --object nebula --variant pillars --capture pillars.png
+helios_deep_sky_lab --object planet --variant ringed-gas-giant --benchmark</code></pre>
+      </div>
+      <div>
+        <p class="keys"><kbd>1</kbd> to <kbd>7</kbd> switch objects, <kbd>Space</kbd> pauses, <kbd>R</kbd> resets the view, the mouse orbits.</p>
+        <p class="note">The lab never grabs the mouse or reads input while unfocused. The capture and benchmark routes create no window at all; every frame on this page came out of them at 3840 by 2160, and none was retouched.</p>
+        <p class="note">Every model cites its sources in the code: Bucholtz 1995, Goldreich and Tremaine 1978, Meador and Weaver 1980, Hillaire 2020, Page and Thorne 1974, Shakura and Sunyaev 1973, Schneider and Vos 2015, among others.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <img id="lightbox-image" src="" alt="">
+  <p id="lightbox-caption"></p>
+  <button type="button" id="lightbox-close">Close</button>
+</div>
+
+<footer>
+  <p>Helios is written by Leonhard Meingast. The community edition is intended to be AGPL-3.0-only; third-party code keeps its own licences.</p>
+</footer>
+
+<script>
+  // A still star field behind the page, drawn once per resize.
+  (function () {
+    var canvas = document.getElementById("stars");
+    if (!canvas || !canvas.getContext) { return; }
+    var context = canvas.getContext("2d");
+    var seed = 7;
+    function random() { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+    function draw() {
+      var ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * ratio);
+      canvas.height = Math.floor(window.innerHeight * ratio);
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      seed = 7;
+      var count = Math.floor(canvas.width * canvas.height / 4200);
+      for (var i = 0; i < count; i++) {
+        var x = random() * canvas.width, y = random() * canvas.height;
+        var brightness = Math.pow(random(), 3.0);
+        var size = (0.4 + brightness * 1.3) * ratio;
+        var warm = random();
+        context.fillStyle = "rgba(" + (225 + Math.floor(warm * 30)) + "," + (220 + Math.floor((1 - warm) * 20)) + "," + (205 + Math.floor((1 - warm) * 50)) + "," + (0.18 + brightness * 0.75) + ")";
+        context.beginPath(); context.arc(x, y, size, 0, 6.2832); context.fill();
+      }
+    }
+    draw();
+    window.addEventListener("resize", draw);
+  })();
+
+  // Footage plays while it is on screen; off screen it pauses, so eight 4K
+  // loops do not decode at once.  Viewers who prefer reduced motion keep
+  // the posters.
+  (function () {
+    var reduced = false;
+    try { reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    var videos = document.querySelectorAll("video.footage");
+    if (reduced) {
+      videos.forEach(function (v) { v.removeAttribute("autoplay"); v.pause(); });
+      return;
+    }
+    if (!("IntersectionObserver" in window)) {
+      videos.forEach(function (v) { v.play().catch(function () {}); });
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var v = entry.target;
+        if (entry.isIntersecting) { v.play().catch(function () {}); } else { v.pause(); }
+      });
+    }, { rootMargin: "200px 0px" });
+    videos.forEach(function (v) { observer.observe(v); });
+  })();
+
+  // The gallery filter and lightbox.
+  (function () {
+    var buttons = document.querySelectorAll(".filters button");
+    var figures = document.querySelectorAll("#mosaic figure");
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        var filter = button.getAttribute("data-filter");
+        buttons.forEach(function (b) { b.setAttribute("aria-pressed", b === button ? "true" : "false"); });
+        figures.forEach(function (figure) {
+          figure.hidden = !(filter === "all" || figure.getAttribute("data-kind") === filter);
+        });
+      });
+    });
+    var box = document.getElementById("lightbox");
+    var image = document.getElementById("lightbox-image");
+    var caption = document.getElementById("lightbox-caption");
+    var close = document.getElementById("lightbox-close");
+    function hide() { box.hidden = true; image.src = ""; }
+    figures.forEach(function (figure) {
+      figure.addEventListener("click", function () {
+        var img = figure.querySelector("img");
+        image.src = img.src; image.alt = img.alt;
+        caption.textContent = figure.querySelector("figcaption").textContent;
+        box.hidden = false; close.focus();
+      });
+    });
+    close.addEventListener("click", hide);
+    box.addEventListener("click", function (event) { if (event.target === box) { hide(); } });
+    document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !box.hidden) { hide(); } });
+  })();
+</script>
+</body>
+</html>
