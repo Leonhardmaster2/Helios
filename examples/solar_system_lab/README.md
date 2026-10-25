@@ -33,6 +33,7 @@ each planet are visible at a glance.
   (`I(mu) = I(0)(1 - 0.6(1 - mu))`) and two octaves of drifting granulation,
   output as linear HDR radiance. It is tone-mapped and glared by the same
   `HdrPostChain` as the planets, so the Sun blooms without a special sprite.
+- **Rotation.** Each body turns at its sidereal rotation period (retrograde periods are negative); the camera and sun direction are rotated into the body-fixed frame, so the surface moves under a fixed view. Axial tilts are not applied yet.
 - **Each planet's surface.** Rocky worlds use the terrain height field and
   climate materials of `planet_surface.*`; the gas giants use the banded
   cloud-deck branch with their own band counts and colours. Earth keeps its

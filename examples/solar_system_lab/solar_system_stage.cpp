@@ -20,6 +20,25 @@ namespace {
 
 constexpr double kRadians = std::numbers::pi / 180.0;
 
+// Rotation about the ecliptic pole: the v0.0.1 solar-system lab keeps every
+// spin axis perpendicular to the ecliptic (axial tilts are a later addition).
+[[nodiscard]] math::Vec3d rotateZ(math::Vec3d const& value, double angle) noexcept {
+    double const c = std::cos(angle);
+    double const s = std::sin(angle);
+    return {c * value[0] - s * value[1], s * value[0] + c * value[1], value[2]};
+}
+
+[[nodiscard]] double bodyRotationRadians(int index, double days_since_j2000) noexcept {
+    double const hours = index <= 0 ? kSun.rotation_period_hours
+                                    : kSolarSystemPlanets[static_cast<std::size_t>(index - 1)]
+                                          .rotation_period_hours;
+    if (hours == 0.0) {
+        return 0.0;
+    }
+    double const days_per_rotation = hours / 24.0;
+    return 2.0 * std::numbers::pi * days_since_j2000 / days_per_rotation;
+}
+
 [[nodiscard]] float reliefAmplitude(PlanetBody const& body) noexcept {
     double const relief = std::max(body.platform_m + body.base_roughness_m * 1.5 +
                                        body.mountain_amplitude_m + body.detail_amplitude_m,
@@ -333,10 +352,13 @@ bool SolarSystemStage::render(SolarSystemSettings const& settings, std::uint32_t
         patches.time_s = settings.days_since_j2000 * 86400.0;
         patches.ambient = body.atmosphere ? 0.10f : 0.02f;
         patches.ambient_color = {1.0f, 1.0f, 1.0f};
+        // The body-fixed frame turns with the body's sidereal rotation.
+        double const rotation = bodyRotationRadians(index, settings.days_since_j2000);
         if (body.star) {
             patches.light_direction = {0.0, 0.0, 1.0};
         } else {
-            patches.light_direction = math::normalized(position * -1.0);
+            patches.light_direction =
+                rotateZ(math::normalized(position * -1.0), -rotation);
         }
         if (index == 3) {
             // Earth's cloud deck: the terrain pass draws its shadows, so it
@@ -352,10 +374,10 @@ bool SolarSystemStage::render(SolarSystemSettings const& settings, std::uint32_t
         }
 
         PlanetPatchView patch_view;
-        patch_view.camera_body_fixed_m = view.camera_position_m - position;
-        patch_view.forward_body_fixed = view.forward;
-        patch_view.right_body_fixed = view.right;
-        patch_view.up_body_fixed = view.up;
+        patch_view.camera_body_fixed_m = rotateZ(view.camera_position_m - position, -rotation);
+        patch_view.forward_body_fixed = rotateZ(view.forward, -rotation);
+        patch_view.right_body_fixed = rotateZ(view.right, -rotation);
+        patch_view.up_body_fixed = rotateZ(view.up, -rotation);
         patch_view.vertical_fov_rad = view.vertical_fov_rad;
         patch_view.near_plane_m = 0.25;
         patch_view.viewport_width_px = render_width;
