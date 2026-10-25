@@ -8,6 +8,10 @@
 
 ## v0.0.1 highlights
 
+<p align="center">
+  <img src="assets/solar_system.jpg" alt="The Helios Solar System lab: the Sun, the inner planets and their orbits" width="100%">
+</p>
+
 The first integrated build turns the design documents into running software. The most interesting
 parts:
 
