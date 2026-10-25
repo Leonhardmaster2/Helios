@@ -60,7 +60,7 @@ The lab therefore separates the scales:
 | True scale | button | sets both to 1 |
 | Camera distance | 2 AU | distance from the focused body |
 | Orbit line fit | automatic | an orbit much larger than the view is not drawn |
-| Supersample | 2 (4 available) | the 3-D scene is rendered at 2x or 4x and box-resolved to the output |
+| Supersample | captures 4x (up to 1080p), interactive 2x | the 3-D scene is box-resolved to the output; 1x/2x/4x are selectable |
 
 Orbits and positions are never compressed; only the radii are exaggerated.
 The panel shows each body's true radius, period, rotation and distance from the
@@ -68,7 +68,7 @@ Sun.
 
 ## Anti-aliasing
 
-The 3-D scene is rendered at twice the output resolution by default (the **Supersample** control: 1, 2 or 4; 4 is the smoothest and is available for captures) and an exact box resolve (`shaders/solar_resolve.slang` for 2x, `shaders/solar_resolve4.slang` for 4x) averages the samples into each output pixel before exposure, glare and tone mapping. The Sun's limb also gets a screen-space coverage fade in `shaders/planet_patch.slang`, so a small solar disk is not a staircase. The 2x scene also gives the quadtree twice the screen-space error budget, so the planets resolve more LOD detail.
+The 3-D scene is rendered at four times the output resolution for captures up to 1080p, and twice for the interactive route (the **Supersample** control: 1, 2 or 4) and an exact box resolve (`shaders/solar_resolve.slang` for 2x, `shaders/solar_resolve4.slang` for 4x) averages the samples into each output pixel before exposure, glare and tone mapping. The Sun's limb also gets a screen-space coverage fade in `shaders/planet_patch.slang`, so a small solar disk is not a staircase. The 2x scene also gives the quadtree twice the screen-space error budget, so the planets resolve more LOD detail.
 
 ## Routes
 

@@ -138,7 +138,7 @@ band deck. Nothing is a billboard, a lens flare, or a skybox.
 - Planet radii are exaggerated for display (500× by default) while the orbits stay true; a
   true-scale button sets both radii and the Sun back to 1×. The Sun has its own display scale so
   its disk does not swallow the inner planets.
-- The 3-D scene renders at 2× by default (4× is available) and an exact box resolve averages it
+- The 3-D scene renders at 4× for captures up to 1080p and 2× interactively, and an exact box resolve averages it
   down before the display chain; combined with a screen-space limb fade, the Sun's edge is
   anti-aliased at small sizes.
 - Each body spins at its sidereal rotation period; the camera and sun direction are rotated into

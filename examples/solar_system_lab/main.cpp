@@ -328,6 +328,7 @@ struct CaptureOptions {
     std::uint32_t height = 1080;
     int smoke_frames = 0;
     bool help = false;
+    bool supersample_given = false;
     SolarSystemSettings settings = defaultSettings();
 };
 
@@ -428,6 +429,7 @@ struct CaptureOptions {
                 return false;
             }
             options.settings.supersample = static_cast<int>(v);
+            options.supersample_given = true;
         } else if (argument == "--focus") {
             if (index + 1 >= argc) {
                 error = "--focus needs a body name";
@@ -464,7 +466,7 @@ struct CaptureOptions {
                 "  --true-scale          same as --planet-scale 1 --sun-scale 1\n"
                 "  --exposure EV         display exposure\n"
                 "  --glare N             glare fraction (default 0.18)\n"
-                "  --supersample N       render at N x the output size (1, 2 or 4; default 2)\n"
+                "  --supersample N       render at N x the output size (1, 2 or 4; default 2, captures 4 up to 1080p)\n"
                 "  --width N --height N  image size (default 1920x1080)\n"
                 "  --report PATH.json    write the capture parameters and metrics\n"
                 "  --smoke-frames N      run the interactive route in a hidden window for N frames\n");
@@ -859,6 +861,14 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (parse_ok) {
+        if (!capture.supersample_given) {
+            // Captures default to 4x when the pixel count stays modest;
+            // the interactive route stays at 2x for frame time.
+            capture.settings.supersample =
+                static_cast<std::uint64_t>(capture.width) * capture.height <= 1920ULL * 1080ULL
+                    ? 4
+                    : 2;
+        }
         return runCapture(capture);
     }
     return runInteractive(capture.smoke_frames);
