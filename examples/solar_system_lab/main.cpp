@@ -67,6 +67,13 @@ struct LabState {
     return settings;
 }
 
+[[nodiscard]] double daysSinceJ2000Now() {
+    // J2000.0 is 2000-01-01 12:00 UTC = Unix 946728000 s.
+    double const seconds =
+        std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return (seconds - 946'728'000.0) / 86'400.0;
+}
+
 [[nodiscard]] int bodyIndex(std::string_view name) noexcept {
     for (int index = 0; index < static_cast<int>(kSolarSystemBodyCount); ++index) {
         std::string_view const candidate{solarSystemBodyName(index)};
@@ -353,6 +360,8 @@ struct CaptureOptions {
             if (!value(-1.0e6, 1.0e6, options.settings.days_since_j2000)) {
                 return false;
             }
+        } else if (argument == "--now") {
+            options.settings.days_since_j2000 = daysSinceJ2000Now();
         } else if (argument == "--distance-au") {
             double au = 0.0;
             if (!value(1.0e-4, 200.0, au)) {
@@ -421,6 +430,7 @@ struct CaptureOptions {
             std::printf(
                 "helios_solar_system --capture PATH.png [options]\n"
                 "  --days N              days since J2000 (default 0)\n"
+                "  --now                 use the current date instead of J2000\n"
                 "  --focus NAME          Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn,\n"
                 "                        Uranus or Neptune\n"
                 "  --distance-au N       camera distance from the focus\n"
@@ -532,6 +542,10 @@ void drawPanel(LabState& state, SolarSystemStageMetrics const& metrics, float fp
     ImGui::SameLine();
     if (ImGui::Button("J2000")) {
         state.settings.days_since_j2000 = 0.0;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Now")) {
+        state.settings.days_since_j2000 = daysSinceJ2000Now();
     }
     double days_min = -20000.0;
     double days_max = 20000.0;

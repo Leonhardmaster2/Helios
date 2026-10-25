@@ -4,7 +4,7 @@
 
 # Helios
 
-> **Status — the v0.0.1 MVP implementation builds and its automated headless gates pass.** The interactive planet route still requires a deliberate visual/driver acceptance run before a release tag. The branch includes a recursively pinned Vulkan-only Diligent backend, cube-sphere LOD/descent rendering, deterministic terrain/residency evidence, a Diligent precision proof, and a Schwarzschild laboratory. See the measurable [v0.0.1 contract](docs/V0_0_1_MVP.md), [ROADMAP.md](ROADMAP.md), and [evidence/m0/README.md](evidence/m0/README.md). Planned behavior is not treated as validated until its release gate has evidence.
+> **Status — the v0.0.1 MVP implementation builds and its automated headless gates pass.** The interactive planet route still requires a deliberate visual/driver acceptance run before a release tag. The branch includes a recursively pinned Vulkan-only Diligent backend, cube-sphere LOD/descent rendering, deterministic terrain/residency evidence, a Diligent precision proof, a Schwarzschild laboratory, and a solar-system lab with a real Sun entity. See the measurable [v0.0.1 contract](docs/V0_0_1_MVP.md), [ROADMAP.md](ROADMAP.md), and [evidence/m0/README.md](evidence/m0/README.md). Planned behavior is not treated as validated until its release gate has evidence.
 
 ## v0.0.1 highlights
 

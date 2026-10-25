@@ -87,6 +87,19 @@ Acceptance conditions:
 - all configured CPU, resident-tile, staging, request, and upload budgets remain hard limits;
 - the route emits a deterministic JSON report and reference captures.
 
+### `helios_solar_system`
+
+The Sun and the eight planets on the cube-sphere renderer. The Sun is a body
+(`PlanetBody.star = true`), not a light: an emissive, limb-darkened, granulated photosphere drawn
+by the same patch renderer as the planets, with a screen-space limb fade. Planets use J2000 mean
+elements and a two-body Kepler solver (`solar_system_data.hpp`); each body owns a quadtree selector,
+spins at its sidereal rotation period, and is rebased to its own centre before the float32 upload.
+The lab has an interactive orbit camera, a windowless `--capture` route, a hidden-window
+`--smoke-frames` route, orbit/label overlays, and a 2x supersampled scene resolved by an exact 2x2
+integer-load box filter. Acceptance for v0.0.1: `--capture` exits 0 with zero validation errors and
+draws all nine bodies. Saturn's rings, moons, axial tilts, perturbations, and ephemeris-grade
+accuracy are follow-up work; the element table is a visualization aid, not navigation data.
+
 ### `helios_terrain_lab`
 
 Standalone deterministic generator and residency proof. This project is intentionally allowed
