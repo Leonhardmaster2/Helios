@@ -402,7 +402,11 @@ struct CaptureOptions {
             options.settings.glare = static_cast<float>(v);
         } else if (argument == "--supersample") {
             double v = 0.0;
-            if (!value(1.0, 2.0, v)) {
+            if (!value(1.0, 4.0, v)) {
+                return false;
+            }
+            if (v != 1.0 && v != 2.0 && v != 4.0) {
+                error = "--supersample must be 1, 2 or 4";
                 return false;
             }
             options.settings.supersample = static_cast<int>(v);
@@ -442,7 +446,7 @@ struct CaptureOptions {
                 "  --true-scale          same as --planet-scale 1 --sun-scale 1\n"
                 "  --exposure EV         display exposure\n"
                 "  --glare N             glare fraction (default 0.12)\n"
-                "  --supersample N       render at N x the output size (1-2, default 2)\n"
+                "  --supersample N       render at N x the output size (1, 2 or 4; default 2)\n"
                 "  --width N --height N  image size (default 1920x1080)\n"
                 "  --smoke-frames N      run the interactive route in a hidden window for N frames\n");
             options.help = true;
@@ -599,7 +603,11 @@ void drawPanel(LabState& state, SolarSystemStageMetrics const& metrics, float fp
     }
     ImGui::SliderFloat("Exposure (EV)", &state.settings.exposure_ev, -8.0f, 8.0f, "%+.1f");
     ImGui::SliderFloat("Glare", &state.settings.glare, 0.0f, 0.5f, "%.2f");
-    ImGui::SliderInt("Supersample", &state.settings.supersample, 1, 2);
+    int supersample_index = state.settings.supersample >= 4 ? 2 : (state.settings.supersample >= 2 ? 1 : 0);
+    char const* supersamples[] = {"1x", "2x", "4x"};
+    if (ImGui::Combo("Supersample", &supersample_index, supersamples, 3)) {
+        state.settings.supersample = supersample_index == 2 ? 4 : (supersample_index == 1 ? 2 : 1);
+    }
     ImGui::SliderFloat("LOD error (px)", &state.settings.lod_error_px, 0.5f, 8.0f, "%.1f");
     if (metrics.render_width > 0) {
         ImGui::Text("Rendering %ux%u, resolving to %ux%u", metrics.render_width,

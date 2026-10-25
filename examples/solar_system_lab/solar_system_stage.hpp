@@ -138,6 +138,9 @@ class SolarSystemStage {
     Diligent::RefCntAutoPtr<Diligent::IShader> resolve_shader_;
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> resolve_pipeline_;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> resolve_resources_;
+    Diligent::RefCntAutoPtr<Diligent::IShader> resolve4_shader_;
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> resolve4_pipeline_;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding> resolve4_resources_;
     Diligent::RefCntAutoPtr<Diligent::ITexture> resolved_;
     std::uint32_t resolved_width_ = 0;
     std::uint32_t resolved_height_ = 0;

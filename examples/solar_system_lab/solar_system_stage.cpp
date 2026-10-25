@@ -154,6 +154,29 @@ bool SolarSystemStage::createResolvePass(std::string& error) {
         error = "Diligent failed to create the solar-system resolve binding";
         return false;
     }
+
+    resolve4_shader_ = createEmbeddedShader(device_, "solar_resolve4.slang.fragment.spv",
+                                            "Helios solar-system 4x resolve shader",
+                                            Diligent::SHADER_TYPE_PIXEL, error);
+    if (resolve4_shader_ == nullptr) {
+        return false;
+    }
+    FullscreenPipelineInfo info4;
+    info4.name = "Helios solar-system 4x resolve pipeline";
+    info4.vertex_shader = fullscreen_vertex_;
+    info4.pixel_shader = resolve4_shader_;
+    info4.target_formats = formats;
+    info4.variables = variables;
+    resolve4_pipeline_ = createFullscreenPipeline(device_, info4);
+    if (resolve4_pipeline_ == nullptr) {
+        error = "Diligent failed to create the solar-system 4x resolve pipeline";
+        return false;
+    }
+    resolve4_pipeline_->CreateShaderResourceBinding(&resolve4_resources_, true);
+    if (resolve4_resources_ == nullptr) {
+        error = "Diligent failed to create the solar-system 4x resolve binding";
+        return false;
+    }
     return true;
 }
 
@@ -180,17 +203,23 @@ bool SolarSystemStage::resolveSupersample(Diligent::ITexture* source, std::uint3
         error = "the solar-system resolve pass has no source or target";
         return false;
     }
-    (void)factor; // the resolve is a fixed 2x2 box; see solar_resolve.slang
+    bool const four = factor >= 4;
+    Diligent::IPipelineState* pipeline = four ? resolve4_pipeline_ : resolve_pipeline_;
+    Diligent::IShaderResourceBinding* resources = four ? resolve4_resources_ : resolve_resources_;
+    if (pipeline == nullptr || resources == nullptr) {
+        error = "the solar-system resolve pipeline is not initialized";
+        return false;
+    }
     Diligent::ITextureView* source_view = source->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
     if (source_view == nullptr) {
         error = "the solar-system resolve source has no shader-resource view";
         return false;
     }
-    if (!bindVariable(resolve_resources_, "source", source_view, error)) {
+    if (!bindVariable(resources, "source", source_view, error)) {
         return false;
     }
     Diligent::ITextureView* target = resolved_->GetDefaultView(Diligent::TEXTURE_VIEW_RENDER_TARGET);
-    drawFullscreen(context_, {&target, 1}, width, height, resolve_pipeline_, resolve_resources_);
+    drawFullscreen(context_, {&target, 1}, width, height, pipeline, resources);
     return true;
 }
 
@@ -302,7 +331,8 @@ bool SolarSystemStage::render(SolarSystemSettings const& settings, std::uint32_t
         error = "the solar-system stage has no output or a zero-sized image";
         return false;
     }
-    int const supersample = std::clamp(settings.supersample, 1, 2);
+    int const requested = std::clamp(settings.supersample, 1, 4);
+    int const supersample = requested >= 4 ? 4 : (requested >= 2 ? 2 : 1);
     std::uint32_t const render_width = width * static_cast<std::uint32_t>(supersample);
     std::uint32_t const render_height = height * static_cast<std::uint32_t>(supersample);
     if (!ensureTargets(render_width, render_height, error)) {
