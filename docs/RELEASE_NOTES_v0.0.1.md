@@ -120,7 +120,31 @@ with two-stream reflectance and billow erosion, a ring slab shaded by single sca
 Lindblad gaps at the moons' resonances, and moons on Kepler orbits. The same cube-sphere quadtree
 as the planet lab draws it.
 
-### 5. Diligent Engine, Vulkan only
+### 5. A Sun and the Solar System
+
+`helios_solar_system` is the first Helios scene with a **Sun entity**. The Sun and all eight
+planets are drawn by the planet lab's cube-sphere patch renderer: the Sun is a `PlanetBody` with
+`star = true`, an emissive photosphere with Eddington limb darkening and drifting granulation in
+`shaders/planet_patch.slang`, and each planet is the same body type with terrain or a gas-giant
+band deck. Nothing is a billboard, a lens flare, or a skybox.
+
+- Positions come from J2000 mean orbital elements (NASA NSSDCA fact sheets) and a two-body Kepler
+  solver; the J2000 rows were checked against JPL Horizons DE441 to 2–20 arcseconds for the inner
+  planets.
+- Every body owns a quadtree selector and is rebased to its own centre before the float32 upload,
+  so the camera can move from a whole-system map to a two-metre surface view without a scene load.
+- The camera orbits the Sun or follows any planet; orbit lines and labels are drawn over the
+  image. A windowless `--capture` route rasterises the same overlay into the PNG.
+- Planet radii are exaggerated for display (500× by default) while the orbits stay true; a
+  true-scale button sets both radii and the Sun back to 1×. The Sun has its own display scale so
+  its disk does not swallow the inner planets.
+- The 3-D scene renders at 2× and an exact 2×2 box resolve averages it down before the display
+  chain; combined with a screen-space limb fade, the Sun's edge is anti-aliased at small sizes.
+
+The lab deliberately does not yet add Saturn's rings, moons, planetary atmospheres, perturbations
+or an ephemeris-grade model; the requirements for those already exist in the planet/deep-sky code.
+
+### 6. Diligent Engine, Vulkan only
 
 The MVP applications use Diligent Engine's static Vulkan backend. Direct3D 11/12, OpenGL, Metal,
 and WebGPU are disabled at configure time, and no Diligent runtime DLL is required. Slang shaders
@@ -128,7 +152,7 @@ are compiled offline to SPIR-V and embedded; reflection/ABI tests guard the shad
 contract. The pre-migration raw-Vulkan renderer is kept as an isolated parity target, and the two
 Vulkan loaders are never linked into the same executable.
 
-### 6. Evidence and a showcase site
+### 7. Evidence and a showcase site
 
 The repository carries the M0 build/smoke evidence and the M1 precision bundle under `evidence/`.
 `site/index.html` is a self-contained showcase with 4K captures of every deep-sky preset and a
@@ -178,6 +202,9 @@ Try the labs:
 
 ```powershell
 build/windows-dev/examples/planet_lod_lab/RelWithDebInfo/helios_planet_lod_lab.exe
+build/windows-dev/examples/solar_system_lab/RelWithDebInfo/helios_solar_system.exe
+build/windows-dev/examples/solar_system_lab/RelWithDebInfo/helios_solar_system.exe `
+  --capture solar_system.png --width 2560 --height 1440 --focus Earth --distance-au 0.0002
 build/windows-dev/examples/deep_sky_lab/RelWithDebInfo/helios_deep_sky_lab.exe --object galaxy
 build/windows-dev/examples/black_hole_lab/RelWithDebInfo/helios_black_hole_realtime.exe `
   --capture black_hole.png --width 1920 --height 1080 --preset ultra
@@ -196,6 +223,10 @@ build/windows-dev/examples/black_hole_lab/RelWithDebInfo/helios_black_hole_realt
 - **The gas and galaxy models omit magnetic fields, self-gravity of the clouds, diffuse ionising
   radiation, and live dark matter.** Brightness ratios between emission processes are set by hand
   where no absolute calibration is carried through; the spatial patterns are computed.
+- **The Solar-System lab is a visualization, not an ephemeris.** The planets use J2000 mean
+  two-body elements (no perturbations, precession, Moon, or SPICE); planet radii are exaggerated
+  for display; Saturn's rings, the moons, and the planets' atmospheres are not in this lab yet.
+  The Sun is a limb-darkened, granulated emissive body, not a stellar-structure or MHD model.
 - **The SDL-to-Diligent native-window bridge is Win32-only** for this release.
 - **It is not a game.** There is no collision response, avatar, vehicle, fuel, orbital gameplay,
   vegetation, buildings, or water simulation.
@@ -205,9 +236,11 @@ build/windows-dev/examples/black_hole_lab/RelWithDebInfo/helios_black_hole_realt
 1. Record the interactive descent acceptance run and regenerate the evidence bundles at the
    merge commit.
 2. Cross-face neighbour stitching and asynchronous GPU terrain residency in the planet lab.
-3. A Linux/MoltenVK port that earns support through the same validation suite.
-4. A named, provenance-backed Earth DEM region for the v1 hero body.
-5. The remaining v1 milestones in [ROADMAP.md](../ROADMAP.md).
+3. Saturn's rings, the Moon and the Galilean moons, and visible planetary atmospheres in the
+   Solar-System lab.
+4. A Linux/MoltenVK port that earns support through the same validation suite.
+5. A named, provenance-backed Earth DEM region for the v1 hero body.
+6. The remaining v1 milestones in [ROADMAP.md](../ROADMAP.md).
 
 ## Licensing
 

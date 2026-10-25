@@ -236,6 +236,33 @@ float4 fsMain(VsOut input) : SV_Target {
     float3 normal = normalize(input.normal);
     float3 to_light = normalize(frame.light.xyz);
     float3 to_camera = normalize(-input.view);
+
+    // A star: the patch geometry is the photosphere, so there is no surface
+    // to light.  Emissive with Eddington limb darkening
+    // I(mu) = I(0) * (1 - u * (1 - mu)), u = 0.6, and two octaves of
+    // granulation that drift slowly.  This keeps a star on the same LOD and
+    // camera-relative precision path as a planet.
+    if (body.bands.x > 1.5f) {
+        // mu is the cosine of the view angle; at the limb it reaches zero.
+        // The screen-space footprint of mu gives a one-to-two-pixel soft
+        // edge, so a small solar disk is not a staircase even at 1x.
+        float mu_raw = dot(normal, to_camera);
+        float footprint = max(fwidth(mu_raw), 1.0e-4f);
+        float coverage = smoothstep(0.0f, footprint * 1.5f, mu_raw);
+        float mu = saturate(mu_raw);
+        float limb = 1.0f - 0.6f * (1.0f - mu);
+        float drift = frame.camera.w * 0.02f;
+        float3 q = direction * 45.0f + float3(drift, 0.0f, -drift);
+        float g0 = planetValueNoiseD(int3(0, 0, 0), q, body.seeds[0], 3u).x;
+        float g1 = planetValueNoiseD(int3(0, 0, 0), q * 3.1f, body.seeds[1], 4u).x;
+        float granulation = 0.86f + 0.22f * (0.7f * g0 + 0.3f * g1);
+        float3 radiance = float3(1.0f, 0.91f, 0.74f) * (limb * granulation * coverage) * 2.5f;
+        if (frame.planet.w > 0.5f) {
+            return float4(toneMap(radiance * 3.0f), 1.0f);
+        }
+        return float4(radiance, 1.0f);
+    }
+
     float height = input.surface.x;
     float sea = body.shape.y;
     bool ocean = body.color_ocean_deep.w > 0.5f && height < sea;

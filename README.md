@@ -33,6 +33,11 @@ parts:
   Direct3D, OpenGL, Metal and WebGPU disabled; Slang is compiled offline to embedded SPIR-V and
   covered by reflection/ABI tests. The pre-migration raw-Vulkan path is kept isolated as a parity
   target.
+- **A Sun, and the Solar System around it.** `helios_solar_system` is the first scene with a Sun
+  entity: the Sun and all eight planets are bodies on the planet lab's cube-sphere renderer. The
+  Sun has a limb-darkened, granulated photosphere (a `star` branch in `shaders/planet_patch.slang`);
+  the planets sit on their J2000 Keplerian orbits with individually selected LOD, and the camera
+  can fly from a whole-system map to a close-up of any world.
 - **A showcase site and evidence.** `site/index.html` collects 4K captures and the method behind
   each object; the M0/M1 evidence bundles record the build, precision, and smoke results.
 
@@ -125,6 +130,7 @@ tests in `tests/`, and independent MVP applications in `examples/`.
 | Target | Purpose | Display/GPU behavior |
 |---|---|---|
 | `helios_planet_lod_lab` | Interactive cube-sphere LOD inspector and scripted ~1e9 m-to-2 m descent, with ImGui controls and telemetry | Diligent/Vulkan window; launch manually |
+| `helios_solar_system` | The Sun and eight planets on the cube-sphere renderer: a real emissive Sun body, J2000 Keplerian orbits, orbit/label overlay, close-ups and captures | Diligent/Vulkan window; `--capture` and `--smoke-frames` are windowless |
 | `helios_terrain_lab` | Deterministic height/normal/slope/residual/error images, seam checks, hashes, and residency trace | Headless CPU |
 | `helios_black_hole_realtime` | Real-time Schwarzschild renderer: per-pixel null geodesics, Page-Thorne black-body disk, lensed sky; checked per pixel against the CPU reference | Diligent/Vulkan window; `--capture`, `--benchmark` and `--validate` are windowless |
 | `helios_black_hole_lab` | Binary64 Schwarzschild null-geodesic reference image and validation report, same disk model | Headless CPU |

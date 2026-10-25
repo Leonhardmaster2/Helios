@@ -80,6 +80,11 @@ struct PlanetBody {
 
     // Gas giant: no terrain, a banded cloud deck instead.
     bool gas_giant = false;
+    // A star: no terrain, an emissive photosphere (limb darkening and
+    // granulation in shaders/planet_patch.slang) instead of a lit surface.
+    // The planet labs draw it through the same cube-sphere patch renderer, so
+    // a star and a planet share the LOD and camera-relative precision path.
+    bool star = false;
     double bands_per_hemisphere = 7.0;
     double band_turbulence = 0.8;
     double storm_density = 0.3;
@@ -121,6 +126,7 @@ enum class PlanetBodyKind : std::uint8_t {
     GasGiant = 3,
     RockyMoon = 4, // airless, cratered (the Moon)
     IcyMoon = 5,   // bright ice with craters (Enceladus-like)
+    Sun = 6,       // an emissive star (the solar-system lab)
 };
 [[nodiscard]] PlanetBody planetBodyPreset(PlanetBodyKind kind, std::uint32_t seed) noexcept;
 

@@ -25,6 +25,13 @@ helios_add_test(helios_planet_system_tests test_planet_system.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../examples/planet_lod_lab/planet_surface.cpp
   LIBS helios_math)
 target_include_directories(helios_planet_system_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../examples/planet_lod_lab)
+helios_add_test(helios_solar_system_tests test_solar_system.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../examples/solar_system_lab/solar_system.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../examples/planet_lod_lab/planet_surface.cpp
+  LIBS helios_math helios_planet)
+target_include_directories(helios_solar_system_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../examples/planet_lod_lab
+  ${CMAKE_CURRENT_SOURCE_DIR}/../examples/solar_system_lab)
 helios_add_test(helios_stellar_systems_tests test_stellar_systems.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../examples/deep_sky_lab/stellar_systems.cpp
   LIBS helios_math)

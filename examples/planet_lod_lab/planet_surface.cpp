@@ -169,7 +169,7 @@ bool operator==(PlanetBody const& a, PlanetBody const& b) noexcept {
         return x[0] == y[0] && x[1] == y[1] && x[2] == y[2];
     };
     return std::memcmp(&pa, &pb, sizeof(pa)) == 0 && a.ocean == b.ocean &&
-           a.gas_giant == b.gas_giant && a.max_octaves == b.max_octaves &&
+           a.gas_giant == b.gas_giant && a.star == b.star && a.max_octaves == b.max_octaves &&
            a.atmosphere == b.atmosphere && same(a.rayleigh_beta, b.rayleigh_beta) &&
            a.rayleigh_height_m == b.rayleigh_height_m && same(a.mie_beta, b.mie_beta) &&
            a.mie_height_m == b.mie_height_m && a.mie_g == b.mie_g &&
@@ -181,7 +181,7 @@ std::uint32_t planetOctavesForLevel(PlanetBody const& body, std::uint32_t level)
 }
 
 double planetHeight(PlanetBody const& body, math::Vec3d const& direction, std::uint32_t octaves) noexcept {
-    if (body.gas_giant) {
+    if (body.gas_giant || body.star) {
         return 0.0;
     }
     std::uint32_t const cap = std::min(octaves, body.max_octaves);
@@ -272,8 +272,10 @@ shaders::PlanetBodyParams planetBodyParams(PlanetBody const& body) noexcept {
     store(g.color_snow, body.color_snow, body.ocean_depth_scale_m);
     store(g.color_ocean_deep, body.color_ocean_deep, body.ocean ? 1.0 : 0.0);
     store(g.color_ocean_shallow, body.color_ocean_shallow, body.ocean_specular);
-    set(g.bands, body.gas_giant ? 1.0 : 0.0, body.bands_per_hemisphere, body.band_turbulence,
-        body.storm_density);
+    // bands.x is the surface kind: 0 terrain, 1 gas giant, 2 star.  The
+    // shader branches on it before it reads the band parameters.
+    set(g.bands, body.star ? 2.0 : (body.gas_giant ? 1.0 : 0.0), body.bands_per_hemisphere,
+        body.band_turbulence, body.storm_density);
     store(g.band_color_a, body.band_color_a, 0.0);
     store(g.band_color_b, body.band_color_b, 0.0);
     store(g.band_color_c, body.band_color_c, 0.0);
@@ -418,6 +420,24 @@ PlanetBody planetBodyPreset(PlanetBodyKind kind, std::uint32_t seed) noexcept {
         b.color_rock = {0.60, 0.66, 0.72};
         b.color_snow = {0.92, 0.94, 0.96};
         b.atmosphere = false;
+        break;
+    case PlanetBodyKind::Sun:
+        // The Sun as an emissive body: no terrain, no atmosphere, no ocean.
+        // The shader supplies the limb darkening and granulation; the preset
+        // fixes the radius the quadtree and the camera use.
+        b.radius_m = 695'700'000.0;
+        b.ocean = false;
+        b.star = true;
+        b.gas_giant = false;
+        b.atmosphere = false;
+        b.mountain_amplitude_m = 0.0;
+        b.detail_amplitude_m = 0.0;
+        b.base_roughness_m = 0.0;
+        b.crater_density = 0.0;
+        b.equator_temperature_k = 5772.0;
+        b.pole_drop_k = 0.0;
+        b.lapse_rate_k_per_m = 0.0;
+        b.humidity_bias = 0.0;
         break;
     }
     return b;
